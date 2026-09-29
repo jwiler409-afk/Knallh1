@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Knall</title>
+<style>
+:root{
+  --bg:#0a0e1f; --bg2:#0e1330; --card:#131a3a; --bubble-ai:#161d40;
+  --text:#eef0ff; --sub:#8b93c4; --accent1:#3fa9f5; --accent2:#a24bf0;
+  --input-bg:#101636; --border:#232a55;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+:root[data-theme="light"]{
+  --bg:#f4f5fb; --bg2:#ffffff; --card:#ffffff; --bubble-ai:#eef0fb;
+  --text:#141832; --sub:#5b6290; --accent1:#2f8de0; --accent2:#8a3ee0;
+  --input-bg:#eef0fb; --border:#dfe2f5;
+}
+@media (prefers-color-scheme: light){
+  :root:not([data-theme="dark"]){
+    --bg:#f4f5fb; --bg2:#ffffff; --card:#ffffff; --bubble-ai:#eef0fb;
+    --text:#141832; --sub:#5b6290; --accent1:#2f8de0; --accent2:#8a3ee0;
+    --input-bg:#eef0fb; --border:#dfe2f5;
+  }
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{
+  background:var(--bg); color:var(--text);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  display:flex; flex-direction:column; height:100%;
+}
+header{
+  position:sticky; top:0; padding:calc(10px + env(safe-area-inset-top,0px)) 16px 10px;
+  background:var(--bg2); border-bottom:1px solid var(--border);
+  display:flex; align-items:center; justify-content:space-between; z-index:10;
+}
+.brand{display:flex; align-items:center; gap:10px}
+.brand svg{width:26px;height:26px}
+.brand span{font-weight:700; font-size:19px; letter-spacing:.2px}
+.hdr-actions{display:flex; align-items:center; gap:8px; position:relative}
+.icon-btn{
+  width:36px;height:36px;border-radius:50%; border:1px solid var(--border);
+  background:var(--card); color:var(--text); display:flex; align-items:center;
+  justify-content:center; cursor:pointer; font-size:15px;
+}
+#agentLabel{font-size:12px; color:var(--sub); margin-right:2px; white-space:nowrap}
+.menu{
+  position:absolute; top:44px; right:0; background:var(--card);
+  border:1px solid var(--border); border-radius:14px; padding:6px;
+  min-width:170px; box-shadow:0 12px 30px rgba(0,0,0,.35); display:none; z-index:20;
+}
+.menu.open{display:block}
+.menu button{
+  width:100%; text-align:left; background:none; border:none; color:var(--text);
+  padding:9px 10px; border-radius:9px; font-size:14.5px; cursor:pointer;
+  display:flex; align-items:center; gap:9px;
+}
+.menu button:hover{background:var(--bubble-ai)}
+.menu button.active{color:var(--accent1); font-weight:600}
+main{flex:1; overflow-y:auto; padding:16px; display:flex; flex-direction:column; gap:12px}
+.msg{max-width:80%; padding:10px 14px; border-radius:16px; font-size:14.5px; line-height:1.4}
+.msg.ai{align-self:flex-start; background:var(--bubble-ai); border-bottom-left-radius:4px}
+.msg.user{align-self:flex-end; background:linear-gradient(135deg,var(--accent1),var(--accent2)); color:#fff; border-bottom-right-radius:4px}
+.msg.pending{opacity:.6; font-style:italic}
+.msg.sys{align-self:center; color:var(--sub); font-size:12.5px; text-align:center}
+footer{
+  padding:10px 14px calc(10px + env(safe-area-inset-bottom,0px));
+  background:var(--bg2); border-top:1px solid var(--border);
+  display:flex; align-items:center; gap:8px;
+}
+#inputRow{
+  flex:1; display:flex; align-items:center; background:var(--input-bg);
+  border:1px solid var(--border); border-radius:22px; padding:6px 6px 6px 16px;
+}
+#inputRow input{flex:1; border:none; background:none; color:var(--text); font-size:14.5px; outline:none}
+#inputRow input::placeholder{color:var(--sub)}
+#sendBtn{
+  width:34px;height:34px;border-radius:50%; border:none; cursor:pointer;
+  background:linear-gradient(135deg,var(--accent1),var(--accent2)); color:#fff;
+  display:flex; align-items:center; justify-content:center; flex-shrink:0;
+}
+
+.brand{user-select:none; -webkit-user-select:none; -webkit-tap-highlight-color:transparent; cursor:default}
+.overlay{position:fixed; inset:0; background:rgba(0,0,0,.55); display:flex; align-items:flex-end; justify-content:center; z-index:50}
+.overlay[hidden]{display:none}
+.sheet{width:100%; max-width:520px; max-height:88%; overflow-y:auto; background:var(--bg2); color:var(--text);
+  border:1px solid var(--border); border-radius:18px 18px 0 0; padding:16px 16px calc(16px + env(safe-area-inset-bottom,0px))}
+.sheet-head{display:flex; align-items:center; justify-content:space-between; margin-bottom:12px}
+.sheet input,.sheet select{width:100%; margin-top:8px; padding:10px 12px; font-size:15px; font-family:inherit;
+  background:var(--input-bg); color:var(--text); border:1px solid var(--border); border-radius:10px}
+.btn{margin-top:10px; padding:10px 14px; border:none; border-radius:10px; font-size:14px; font-weight:600; cursor:pointer;
+  background:linear-gradient(135deg,var(--accent1),var(--accent2)); color:#fff}
+.btn.sec{background:var(--card); color:var(--text); border:1px solid var(--border)}
+.row2{display:flex; gap:8px}
+.row2 .btn{flex:1}
+.hint{font-size:12.5px; color:var(--sub); margin:8px 0 0; min-height:16px}
+.adm-item{border-top:1px solid var(--border); padding:8px 0; font-size:13px}
+.adm-item b{color:var(--accent1)}
+.adm-item button{float:right; background:none; border:none; color:#e0607a; font-size:12px; cursor:pointer}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand" id="brand">
+    <svg viewBox="0 0 24 24"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="var(--accent1)"/><stop offset="1" stop-color="var(--accent2)"/>
+    </linearGradient></defs>
+      <path d="M13 2 L7 13 H11 L9 22 L18 9 H13 Z" fill="url(#g)"/>
+    </svg>
+    <span>Knall</span>
+  </div>
+  <div class="hdr-actions">
+    <span id="agentLabel">Général</span>
+    <button class="icon-btn" id="threadsBtn" aria-label="Conversations">💬</button>
+    <button class="icon-btn" id="menuBtn" aria-label="Choisir un agent">☰</button>
+    <button class="icon-btn" id="themeBtn" aria-label="Changer de thème">◐</button>
+    <div class="menu" id="menu">
+      <button data-agent="general" class="active">🤖 Général</button>
+      <button data-agent="taches">🗂️ Tâches</button>
+      <button data-agent="code">💻 Code</button>
+      <button data-agent="recherche">🔍 Recherche</button>
+    </div>
+  </div>
+</header>
+<main id="chat"></main>
+<footer>
+  <div id="inputRow">
+    <input id="msgInput" placeholder="Écrivez un message...">
+  </div>
+  <button id="sendBtn">➤</button>
+</footer>
+
+<div id="threads" class="overlay" hidden>
+  <div class="sheet">
+    <div class="sheet-head"><b>Conversations</b><button class="icon-btn" id="threadsClose" aria-label="Fermer">✕</button></div>
+    <button class="btn" id="newThreadBtn">+ Nouvelle conversation</button>
+    <div id="threadsList"></div>
+  </div>
+</div>
+
+<div id="admin" class="overlay" hidden>
+  <div class="sheet">
+    <div class="sheet-head"><b>Menu admin</b><button class="icon-btn" id="adminClose" aria-label="Fermer">✕</button></div>
+    <div id="pinView">
+      <input id="pin" type="password" inputmode="numeric" maxlength="6" placeholder="Code" autocomplete="off">
+      <button class="btn" id="pinOk">Ouvrir</button>
+      <p class="hint" id="pinMsg"></p>
+    </div>
+    <div id="adminView" hidden>
+      <select id="admAgent">
+        <option value="general">Agent : Général</option>
+        <option value="taches">Agent : Tâches</option>
+        <option value="code">Agent : Code</option>
+        <option value="recherche">Agent : Recherche</option>
+      </select>
+      <input id="admQ" placeholder="Question">
+      <input id="admR" placeholder="Réponse">
+      <input id="admT" placeholder="Tags séparés par des virgules (facultatif)">
+      <button class="btn" id="admAdd">Ajouter</button>
+      <p class="hint" id="admMsg"></p>
+      <div class="row2">
+        <button class="btn sec" id="admExport">Exporter .json</button>
+        <button class="btn sec" id="admImportBtn">Importer .json</button>
+      </div>
+      <input type="file" id="admFile" accept=".json,application/json" hidden>
+      <p class="hint" id="admCount"></p>
+      <div id="admList"></div>
+    </div>
+  </div>
+</div>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+<script>
+/* ---- Firebase : konesans admin yo pataje ant tout aparèy, konvèsasyon rete lokal ---- */
+const firebaseConfig = {
+  apiKey: "AIzaSyDVcE23SZKF941Q9AI31vpwJRt1aw1QWQo",
+  authDomain: "knall-b14e6.firebaseapp.com",
+  databaseURL: "https://knall-b14e6-default-rtdb.firebaseio.com",
+  projectId: "knall-b14e6",
+  storageBucket: "knall-b14e6.firebasestorage.app",
+  messagingSenderId: "259374045941",
+  appId: "1:259374045941:web:4ab884c3d967dda34343bc",
+  measurementId: "G-L9387S88T6"
+};
+let db = null, fbPret = false;
+try{
+  firebase.initializeApp(firebaseConfig);
+  db = firebase.firestore();
+  firebase.auth().signInAnonymously().then(() => { fbPret = true; synchroniserConnaissances(); }).catch(e => console.error("Firebase auth:", e.message));
+}catch(e){ console.error("Firebase init:", e.message); }
+
+// Anvoye yon konesans nouvo bay tout aparèy
+async function pousseConnaissanceFirebase(agent, item){
+  if(!db) return;
+  try{ await db.collection("knowledge").doc(agent).collection("items").doc(item.id).set(item); }
+  catch(e){ console.error("Firebase push:", e.message); }
+}
+// Rale konesans lòt moun te ajoute, mete yo nan KB si yo poko la
+async function synchroniserConnaissances(){
+  if(!db) return;
+  for(const agent of Object.keys(KB)){
+    try{
+      const snap = await db.collection("knowledge").doc(agent).collection("items").get();
+      const connus = new Set(KB[agent].map(x => x.id));
+      snap.forEach(doc => { if(!connus.has(doc.id)) KB[agent].push(doc.data()); });
+    }catch(e){ console.error("Firebase sync " + agent + ":", e.message); }
+  }
+}
+</script>
+<script>
+/* ---- Configuration du serveur relais (Render) ---- */
+const PROXY_URL = "https://knall-1.onrender.com";
+const APP_TOKEN = "Knall2026SecretXk9";
+const APPRENDRE = true; // sauvegarde les reponses du serveur dans la base locale
+
+/* ---- Bases de connaissances locales, une par agent ---- */
+const KB = {
+  general: [
+    {id:"g001", question:"idée de repas rapide et sain", reponse:"Bol de quinoa au poulet et légumes : quinoa, poulet grillé, avocat, tomates, concombre, sauce au citron.", tags:["repas","cuisine","manger"]},
+    {id:"g002", question:"comment redémarrer l'application", reponse:"Ferme complètement Knall puis rouvre-le depuis l'icône.", tags:["redemarrer","bug","probleme"]},
+    {id:"g003", question:"qui es-tu", reponse:"Je suis Knall, ton assistant qui fonctionne avec ou sans connexion internet.", tags:["knall","qui","identite"]}
+  ],
+  taches: [
+    {id:"t001", question:"créer un rappel", reponse:"Dis-moi quoi et à quelle heure, ex: 'rappelle-moi d'appeler Marc à 15h'.", tags:["rappel","reminder","heure"]},
+    {id:"t002", question:"liste de mes tâches", reponse:"Tu n'as aucune tâche enregistrée pour le moment.", tags:["taches","liste","todo"]}
+  ],
+  code: [
+    {id:"c001", question:"comment faire une fonction en javascript", reponse:"function nom(param) { return param; } — déclare le mot-clé function, un nom, des paramètres entre parenthèses, puis le code entre accolades.", tags:["javascript","fonction","code"]},
+    {id:"c002", question:"comment centrer une div en css", reponse:"Utilise display:flex; justify-content:center; align-items:center; sur le parent.", tags:["css","centrer","div"]}
+  ],
+  recherche: [
+    {id:"r001", question:"meteo", reponse:"La recherche web nécessite une connexion internet active.", tags:["meteo","internet","recherche"]}
+  ]
+};
+const NOMS = {general:"Général", taches:"Tâches", code:"Code", recherche:"Recherche"};
+let agentActif = "general";
+
+/* ---- Fils de conversation : chaque paj gen son tit ak son istwa a li ---- */
+let threads = [];
+let threadId = null;
+function nouvelId(){ return "th" + Date.now() + Math.floor(Math.random()*1000); }
+function videHist(){ return {general:[], taches:[], code:[], recherche:[]}; }
+function chargerThreads(){
+  try{ threads = JSON.parse(localStorage.getItem('knall-threads') || '[]'); }catch(e){ threads = []; }
+  if(!threads.length){
+    threads = [{id: nouvelId(), titre: "Nouvo konvèsasyon", agent: "general", vues: [], hist: videHist()}];
+  }
+}
+function sauverThreads(){ try{ localStorage.setItem('knall-threads', JSON.stringify(threads)); }catch(e){} }
+function threadActif(){ return threads.find(t => t.id === threadId) || threads[0]; }
+const hist = new Proxy({}, { get: (_, agent) => threadActif().hist[agent] }); // compatibilite avec appelerServeur
+
+function nouvelleConversation(){
+  const t = {id: nouvelId(), titre: "Nouvo konvèsasyon", agent: agentActif, vues: [], hist: videHist()};
+  threads.unshift(t); threadId = t.id; sauverThreads();
+  ouvrirConversation(t.id);
+  fermerThreads();
+}
+function ouvrirConversation(id){
+  threadId = id;
+  try{ localStorage.setItem('knall-dernier-fil', id); }catch(e){}
+  const t = threadActif();
+  agentActif = t.agent;
+  agentLabel.textContent = NOMS[agentActif];
+  menu.querySelectorAll('button').forEach(x => x.classList.toggle('active', x.dataset.agent === agentActif));
+  chat.innerHTML = '';
+  t.vues.forEach(m => afficherMsg(m.type, m.texte));
+  if(!t.vues.length) ajouterMsg("sys", "Agent actif : " + NOMS[agentActif]);
+}
+function renommerSiPremier(texte){
+  const t = threadActif();
+  if(t.titre === "Nouvo konvèsasyon"){ t.titre = texte.slice(0, 40) + (texte.length > 40 ? "…" : ""); sauverThreads(); }
+}
+function renderThreadsList(){
+  const liste = document.getElementById('threadsList');
+  liste.innerHTML = '';
+  threads.forEach(t => {
+    const d = document.createElement('div'); d.className = 'adm-item'; d.style.cursor = 'pointer';
+    const del = document.createElement('button'); del.textContent = 'supprimer';
+    del.onclick = ev => {
+      ev.stopPropagation();
+      threads = threads.filter(x => x.id !== t.id);
+      if(!threads.length) threads = [{id: nouvelId(), titre: "Nouvo konvèsasyon", agent: "general", vues: [], hist: videHist()}];
+      sauverThreads();
+      if(t.id === threadId) ouvrirConversation(threads[0].id);
+      renderThreadsList();
+    };
+    const titre = document.createElement('b'); titre.textContent = (t.id === threadId ? "▶ " : "") + t.titre;
+    d.append(del, titre, document.createElement('br'), document.createTextNode(NOMS[t.agent]));
+    d.onclick = () => { ouvrirConversation(t.id); fermerThreads(); };
+    liste.appendChild(d);
+  });
+}
+function ouvrirThreads(){ renderThreadsList(); document.getElementById('threads').hidden = false; }
+function fermerThreads(){ document.getElementById('threads').hidden = true; }
+document.getElementById('threadsBtn').onclick = ouvrirThreads;
+document.getElementById('threadsClose').onclick = fermerThreads;
+document.getElementById('threads').addEventListener('click', e => { if(e.target.id === 'threads') fermerThreads(); });
+document.getElementById('newThreadBtn').onclick = nouvelleConversation;
+
+/* ---- Connaissances apprises (gardees sur l'appareil) ---- */
+function chargerAppris(){
+  try{
+    const a = JSON.parse(localStorage.getItem('knall-appris') || '{}');
+    for(const k in a){ if(KB[k]) KB[k].push(...a[k]); }
+  }catch(e){}
+}
+function sauverAppris(agent, q, r){
+  const item = {id:"auto"+Date.now(), question:q, reponse:r, tags:[]};
+  KB[agent].push(item);
+  try{
+    const a = JSON.parse(localStorage.getItem('knall-appris') || '{}');
+    (a[agent] = a[agent] || []).push(item);
+    localStorage.setItem('knall-appris', JSON.stringify(a));
+  }catch(e){}
+}
+chargerAppris();
+
+/* ---- Moteur de recherche par mots-clés (offline, sans modèle) ---- */
+const norm = s => s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
+function chercherReponse(question, base){
+  const mots = norm(question).split(/[^a-z0-9]+/).filter(m => m.length > 2);
+  if(!mots.length) return null;
+  let meilleur = null, best = 0;
+  for(const item of base){
+    const cible = norm(item.question + " " + item.tags.join(" "));
+    const score = mots.filter(m => cible.includes(m)).length;
+    if(score > best){ best = score; meilleur = item; }
+  }
+  const ok = best >= 2 ? best / mots.length >= 0.5 : (mots.length === 1 && best === 1);
+  return ok ? meilleur.reponse : null;
+}
+
+/* ---- Appel du serveur relais ---- */
+async function appelerServeur(agent, question){
+  const messages = hist[agent].slice(-10).concat([{role:"user", content:question}]);
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), 70000); // Render gratuit: reveil possible ~1 min
+  try{
+    const res = await fetch(PROXY_URL.replace(/\/$/, "") + "/chat", {
+      method: "POST",
+      headers: {"Content-Type":"application/json", "x-knall-token": APP_TOKEN},
+      body: JSON.stringify({agent, messages}),
+      signal: ctrl.signal
+    });
+    const data = await res.json().catch(() => ({}));
+    if(!res.ok) throw new Error(data.error || ("Erreur " + res.status));
+    return data.reponse;
+  }finally{ clearTimeout(t); }
+}
+
+/* ---- Menu agents ---- */
+const menuBtn=document.getElementById('menuBtn'), menu=document.getElementById('menu'), agentLabel=document.getElementById('agentLabel');
+menuBtn.onclick=()=>menu.classList.toggle('open');
+document.addEventListener('click',e=>{ if(!menu.contains(e.target)&&e.target!==menuBtn) menu.classList.remove('open'); });
+menu.querySelectorAll('button').forEach(b=>b.onclick=()=>{
+  menu.querySelectorAll('button').forEach(x=>x.classList.remove('active'));
+  b.classList.add('active');
+  agentActif = b.dataset.agent;
+  threadActif().agent = agentActif;
+  sauverThreads();
+  agentLabel.textContent = NOMS[agentActif];
+  menu.classList.remove('open');
+  ajouterMsg("sys", "Agent actif : " + NOMS[agentActif]);
+});
+
+/* ---- Thème ---- */
+const themeBtn=document.getElementById('themeBtn');
+function applyTheme(t){ document.documentElement.setAttribute('data-theme',t); try{localStorage.setItem('knall-theme',t)}catch(e){} }
+let saved=null; try{saved=localStorage.getItem('knall-theme')}catch(e){}
+applyTheme(saved||'dark');
+themeBtn.onclick=()=>{ const cur=document.documentElement.getAttribute('data-theme'); applyTheme(cur==='light'?'dark':'light'); };
+
+/* ---- Chat ---- */
+const chat=document.getElementById('chat'), input=document.getElementById('msgInput');
+function afficherMsg(type, texte){
+  const d=document.createElement('div');
+  d.className = "msg " + type;
+  d.textContent = texte;
+  chat.appendChild(d);
+  chat.scrollTop = chat.scrollHeight;
+  return d;
+}
+function ajouterMsg(type, texte){
+  const d = afficherMsg(type, texte);
+  threadActif().vues.push({type, texte});
+  sauverThreads();
+  return d;
+}
+function memoriser(agent, q, r){
+  hist[agent].push({role:"user", content:q}, {role:"assistant", content:r});
+  sauverThreads();
+}
+
+async function repondre(question){
+  const agent = agentActif;
+  // 1) base locale
+  const local = chercherReponse(question, KB[agent] || []);
+  if(local){ ajouterMsg("ai", local); memoriser(agent, question, local); return; }
+  // 2) serveur (si configure et en ligne)
+  if(!PROXY_URL){ ajouterMsg("ai", "Rien dans la base locale, et le serveur n'est pas encore configuré (PROXY_URL en haut du script)."); return; }
+  if(!navigator.onLine){ ajouterMsg("ai", "Pas de connexion et pas de réponse dans la base locale. (Le modèle offline viendra ici plus tard.)"); return; }
+  const bulle = ajouterMsg("ai", "…"); // ajoute deja une entree "…" dans vues, on la corrige apres
+  bulle.classList.add("pending");
+  try{
+    const rep = await appelerServeur(agent, question);
+    bulle.textContent = rep;
+    bulle.classList.remove("pending");
+    const v = threadActif().vues; v[v.length-1].texte = rep;
+    memoriser(agent, question, rep);
+    if(APPRENDRE) sauverAppris(agent, question, rep);
+  }catch(e){
+    bulle.classList.remove("pending");
+    const msg = "Impossible de joindre le serveur : " + (e.name === "AbortError" ? "délai dépassé" : e.message);
+    bulle.textContent = msg;
+    const v = threadActif().vues; v[v.length-1].texte = msg;
+    sauverThreads();
+  }
+  chat.scrollTop = chat.scrollHeight;
+}
+function send(){
+  const v=input.value.trim(); if(!v) return;
+  renommerSiPremier(v);
+  ajouterMsg("user", v);
+  input.value='';
+  repondre(v);
+}
+document.getElementById('sendBtn').onclick=send;
+input.addEventListener('keydown',e=>{ if(e.key==='Enter') send(); });
+window.addEventListener('offline', () => ajouterMsg("sys", "Hors connexion — seule la base locale répond."));
+window.addEventListener('online', () => ajouterMsg("sys", "Connexion rétablie."));
+
+chargerThreads();
+let dernierId = null; try{ dernierId = localStorage.getItem('knall-dernier-fil'); }catch(e){}
+ouvrirConversation(threads.find(t => t.id === dernierId) ? dernierId : threads[0].id);
+window.addEventListener('beforeunload', () => { try{ localStorage.setItem('knall-dernier-fil', threadId); }catch(e){} });
+
+/* ---- Menu admin caché : 5 clics en 2 secondes sur le logo ---- */
+const CODE_ADMIN = "000999";
+let taps = [], echecs = 0, verrou = 0;
+const $ = id => document.getElementById(id);
+
+$('brand').addEventListener('click', () => {
+  const now = Date.now();
+  taps = taps.filter(t => now - t <= 2000);
+  taps.push(now);
+  if(taps.length >= 5){ taps = []; ouvrirAdmin(); }
+});
+
+function ouvrirAdmin(){
+  $('admin').hidden = false;
+  $('pin').value = ''; $('pinMsg').textContent = '';
+  $('pinView').hidden = false; $('adminView').hidden = true;
+  setTimeout(() => $('pin').focus(), 50);
+}
+function fermerAdmin(){ $('admin').hidden = true; $('pin').value = ''; }
+$('adminClose').onclick = fermerAdmin;
+$('admin').addEventListener('click', e => { if(e.target === $('admin')) fermerAdmin(); });
+
+function verifierCode(){
+  const reste = Math.ceil((verrou - Date.now()) / 1000);
+  if(reste > 0){ $('pinMsg').textContent = "Trop d'essais. Réessaie dans " + reste + " s."; return; }
+  if($('pin').value === CODE_ADMIN){
+    echecs = 0;
+    $('pinView').hidden = true; $('adminView').hidden = false;
+    $('admAgent').value = agentActif;
+    rendreAdmin();
+  }else{
+    echecs++; $('pin').value = '';
+    if(echecs >= 3){ verrou = Date.now() + 30000; echecs = 0; $('pinMsg').textContent = "Code incorrect. Accès bloqué 30 s."; }
+    else $('pinMsg').textContent = "Code incorrect.";
+  }
+}
+$('pinOk').onclick = verifierCode;
+$('pin').addEventListener('keydown', e => { if(e.key === 'Enter') verifierCode(); });
+
+function lireAppris(){ try{ return JSON.parse(localStorage.getItem('knall-appris') || '{}'); }catch(e){ return {}; } }
+function ecrireAppris(a){ try{ localStorage.setItem('knall-appris', JSON.stringify(a)); }catch(e){} }
+function ajouterConnaissance(agent, q, r, tags){
+  const item = {id:"adm"+Date.now()+Math.floor(Math.random()*1000), question:q, reponse:r, tags:tags};
+  KB[agent].push(item);
+  const a = lireAppris();
+  (a[agent] = a[agent] || []).push(item);
+  ecrireAppris(a);
+  pousseConnaissanceFirebase(agent, item);
+}
+
+function rendreAdmin(){
+  const agent = $('admAgent').value;
+  const ajoutees = lireAppris()[agent] || [];
+  $('admCount').textContent = (KB[agent].length - ajoutees.length) + " de base + " + ajoutees.length + " ajoutée(s) sur cet appareil";
+  const liste = $('admList'); liste.innerHTML = '';
+  ajoutees.slice().reverse().forEach(it => {
+    const d = document.createElement('div'); d.className = 'adm-item';
+    const del = document.createElement('button'); del.textContent = 'supprimer';
+    del.onclick = () => {
+      KB[agent] = KB[agent].filter(x => x.id !== it.id);
+      const a = lireAppris(); a[agent] = (a[agent] || []).filter(x => x.id !== it.id); ecrireAppris(a);
+      rendreAdmin();
+    };
+    const q = document.createElement('b'); q.textContent = it.question;
+    d.append(del, q, document.createElement('br'), document.createTextNode(it.reponse));
+    liste.appendChild(d);
+  });
+}
+$('admAgent').onchange = rendreAdmin;
+
+$('admAdd').onclick = () => {
+  const q = $('admQ').value.trim(), r = $('admR').value.trim();
+  if(!q || !r){ $('admMsg').textContent = "La question et la réponse sont obligatoires."; return; }
+  const tags = $('admT').value.split(',').map(t => t.trim()).filter(Boolean);
+  ajouterConnaissance($('admAgent').value, q, r, tags);
+  $('admQ').value = ''; $('admR').value = ''; $('admT').value = '';
+  $('admMsg').textContent = "Ajouté ✅";
+  rendreAdmin();
+};
+
+$('admExport').onclick = () => {
+  const agent = $('admAgent').value;
+  const blob = new Blob([JSON.stringify(KB[agent], null, 2)], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = agent + '.json';
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+};
+
+$('admImportBtn').onclick = () => $('admFile').click();
+$('admFile').onchange = async e => {
+  const f = e.target.files[0]; if(!f) return;
+  const agent = $('admAgent').value;
+  try{
+    const data = JSON.parse(await f.text());
+    if(!Array.isArray(data)) throw new Error("le fichier doit contenir une liste");
+    const deja = new Set(KB[agent].map(x => norm(x.question)));
+    let n = 0;
+    data.forEach(x => {
+      if(x && typeof x.question === 'string' && typeof x.reponse === 'string' && !deja.has(norm(x.question))){
+        ajouterConnaissance(agent, x.question, x.reponse, Array.isArray(x.tags) ? x.tags : []);
+        deja.add(norm(x.question)); n++;
+      }
+    });
+    $('admMsg').textContent = n + " entrée(s) importée(s) dans " + NOMS[agent] + ".";
+  }catch(err){
+    $('admMsg').textContent = "Import impossible : " + err.message;
+  }
+  e.target.value = '';
+  rendreAdmin();
+};
+</script>
+</body>
+</html>
