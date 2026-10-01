@@ -1,0 +1,1946 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Knall</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mammoth@1.8.0/mammoth.browser.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+<style>
+:root{
+  --bg:#0a0e1f; --bg2:#0e1330; --card:#131a3a; --bubble-ai:#161d40;
+  --text:#eef0ff; --sub:#8b93c4; --accent1:#3fa9f5; --accent2:#a24bf0;
+  --input-bg:#101636; --border:#232a55;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+:root[data-theme="light"]{
+  --bg:#f4f5fb; --bg2:#ffffff; --card:#ffffff; --bubble-ai:#eef0fb;
+  --text:#141832; --sub:#5b6290; --accent1:#2f8de0; --accent2:#8a3ee0;
+  --input-bg:#eef0fb; --border:#dfe2f5;
+}
+@media (prefers-color-scheme: light){
+  :root:not([data-theme="dark"]){
+    --bg:#f4f5fb; --bg2:#ffffff; --card:#ffffff; --bubble-ai:#eef0fb;
+    --text:#141832; --sub:#5b6290; --accent1:#2f8de0; --accent2:#8a3ee0;
+    --input-bg:#eef0fb; --border:#dfe2f5;
+  }
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{
+  background:var(--bg); color:var(--text);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  display:flex; flex-direction:column; height:100%;
+}
+header{
+  position:sticky; top:0; padding:calc(10px + env(safe-area-inset-top,0px)) 16px 10px;
+  background:var(--bg2); border-bottom:1px solid var(--border);
+  display:flex; align-items:center; justify-content:space-between; z-index:10;
+}
+.brand{display:flex; align-items:center; gap:10px}
+.brand svg{width:26px;height:26px}
+.brand span{font-weight:700; font-size:19px; letter-spacing:.2px}
+.hdr-actions{display:flex; align-items:center; gap:8px; position:relative}
+.icon-btn{
+  width:36px;height:36px;border-radius:50%; border:1px solid var(--border);
+  background:var(--card); color:var(--text); display:flex; align-items:center;
+  justify-content:center; cursor:pointer; font-size:15px;
+}
+#agentLabel{font-size:12px; color:var(--sub); margin-right:2px; white-space:nowrap}
+.menu{
+  position:absolute; top:44px; right:0; background:var(--card);
+  border:1px solid var(--border); border-radius:14px; padding:6px;
+  min-width:170px; box-shadow:0 12px 30px rgba(0,0,0,.35); display:none; z-index:20;
+}
+.menu.open{display:block}
+.menu button{
+  width:100%; text-align:left; background:none; border:none; color:var(--text);
+  padding:9px 10px; border-radius:9px; font-size:14.5px; cursor:pointer;
+  display:flex; align-items:center; gap:9px;
+}
+.menu button:hover{background:var(--bubble-ai)}
+.menu button.active{color:var(--accent1); font-weight:600}
+main{flex:1; overflow-y:auto; padding:16px; display:flex; flex-direction:column; gap:12px}
+.msg{max-width:88%; white-space:pre-wrap; word-break:break-word; padding:10px 14px; border-radius:16px; font-size:14.5px; line-height:1.4}
+.msg.ai{align-self:flex-start; background:var(--bubble-ai); border-bottom-left-radius:4px}
+.msg.user{align-self:flex-end; background:linear-gradient(135deg,var(--accent1),var(--accent2)); color:#fff; border-bottom-right-radius:4px}
+.msg.pending{opacity:.6; font-style:italic}
+.msg.sys{align-self:center; color:var(--sub); font-size:12.5px; text-align:center}
+.md{white-space:normal}
+.md h2,.md h3,.md h4,.md h5,.md h6{margin:10px 0 6px; line-height:1.3}
+.md h2{font-size:17px} .md h3{font-size:15.5px} .md h4,.md h5,.md h6{font-size:14.5px}
+.md p{margin:0 0 8px}
+.md p:last-child{margin-bottom:0}
+.md strong{font-weight:700} .md em{font-style:italic}
+.md code{background:rgba(128,128,128,.22); padding:1px 5px; border-radius:5px; font-family:ui-monospace,Menlo,Consolas,monospace; font-size:.92em}
+.md ul,.md ol{margin:4px 0 8px; padding-left:22px}
+.md li{margin:2px 0}
+.md a{color:var(--accent1); text-decoration:underline; word-break:break-all}
+.img-frame{border:1px solid var(--border); border-radius:14px; overflow:hidden; background:var(--card); margin:8px 0; max-width:100%}
+.img-frame img{display:block; width:100%; max-width:320px; margin:0 auto}
+.img-frame .img-dl{display:block; text-align:center; padding:7px; font-size:12.5px; color:var(--accent1); text-decoration:none; border-top:1px solid var(--border)}
+.img-frame .img-load{padding:22px 12px; text-align:center; font-size:13px; color:var(--sub)}
+.img-frame .img-bar{display:flex; border-top:1px solid var(--border)}
+.img-frame .img-bar button{flex:1; border:0; background:none; font:inherit; font-size:12.5px; padding:8px; color:var(--accent1); cursor:pointer; text-align:center}
+.img-frame .img-bar button+button{border-left:1px solid var(--border)}
+.md .tbl-wrap{overflow-x:auto; margin:8px 0; -webkit-overflow-scrolling:touch}
+.md table{border-collapse:collapse; font-size:13px; min-width:100%}
+.md th,.md td{border:1px solid var(--border); padding:5px 9px; text-align:left; white-space:nowrap}
+.md th{background:rgba(128,128,128,.18); font-weight:700}
+.actions{display:flex; gap:6px; margin-top:8px}
+.act-btn{border:1px solid var(--border); background:var(--card); color:var(--text); border-radius:14px; padding:3px 10px; font-size:12.5px; cursor:pointer}
+.msg.pending .actions{display:none}
+.typing{display:inline-flex; gap:4px; padding:4px 2px}
+.typing span{width:6px;height:6px;border-radius:50%;background:var(--sub);animation:tyBounce 1.2s infinite ease-in-out}
+.typing span:nth-child(2){animation-delay:.15s}
+.typing span:nth-child(3){animation-delay:.3s}
+@keyframes tyBounce{0%,80%,100%{transform:scale(.6);opacity:.4}40%{transform:scale(1);opacity:1}}
+.msg img.gen{max-width:100%; border-radius:12px; display:block; margin-top:4px}
+#fichierChip{display:none; align-items:center; gap:6px; background:var(--card); border:1px solid var(--border);
+  border-radius:12px; padding:5px 10px; font-size:12.5px; margin:0 14px 6px; color:var(--sub)}
+#fichierChip.on{display:flex}
+#fichierChip button{background:none; border:none; color:var(--sub); font-size:13px; cursor:pointer; margin-left:auto}
+.fichier{margin:8px 0; border:1px solid var(--border); border-radius:12px; background:var(--card); padding:8px 10px; white-space:normal}
+.fichier .nom{font-weight:600; font-size:13.5px; word-break:break-all}
+.fichier .meta{color:var(--sub); font-size:12px; margin:2px 0 8px}
+.fichier .btns{display:flex; gap:6px; flex-wrap:wrap}
+#viewer{position:fixed; inset:0; z-index:100; background:#1e1e1e; color:#d4d4d4; display:none; flex-direction:column}
+#viewer.open{display:flex}
+#modeBar{display:flex; flex-direction:column; gap:4px}
+#modeBar .hint{margin:0 0 8px 6px; font-size:12px; color:var(--sub)}
+#modeBar .pill{width:100%; text-align:left; border:1px solid var(--border); background:var(--card); color:var(--text); border-radius:12px; padding:11px 14px; font-size:14.5px; cursor:pointer}
+#modeBar .pill.on{border-color:#3fb37f; box-shadow:0 0 0 1px #3fb37f inset}
+#modeBar .pill.off{opacity:.65}
+#modeBar .pill:disabled{opacity:.45; cursor:default}
+#apercu{position:fixed; inset:0; z-index:110; background:#fff; display:none; flex-direction:column}
+#apercu.open{display:flex}
+#apercuBar{display:flex; align-items:center; gap:6px; padding:10px 12px; background:#2d2d2d; color:#fff; padding-top:max(10px, env(safe-area-inset-top))}
+#apercuNom{flex:1; font-family:ui-monospace,Menlo,Consolas,monospace; font-size:13px; word-break:break-all}
+#apercuBar .act-btn{background:#3c3c3c; color:#fff; border-color:#555}
+#apercuFrame{flex:1; width:100%; border:0; background:#fff}
+#viewerBar{display:flex; align-items:center; gap:8px; padding:10px 12px; background:#2d2d2d; color:#fff; padding-top:max(10px, env(safe-area-inset-top))}
+#viewerNom{flex:1; font-family:ui-monospace,Menlo,Consolas,monospace; font-size:13.5px; word-break:break-all}
+#viewerBar .lock{font-size:11.5px; color:#9cdcfe; white-space:nowrap}
+#viewerBar .act-btn{background:#3c3c3c; color:#fff; border-color:#555}
+#viewerCode{flex:1; overflow:auto; margin:0; padding:10px 0 24px; font-family:ui-monospace,Menlo,Consolas,monospace; font-size:12.5px; line-height:1.55; -webkit-user-select:text; user-select:text}
+.ligne{display:flex}
+.ligne .num{flex:none; width:46px; text-align:right; padding-right:12px; color:#858585; -webkit-user-select:none; user-select:none}
+.ligne .cod{white-space:pre; padding-right:16px}
+footer{
+  padding:10px 14px calc(10px + env(safe-area-inset-bottom,0px));
+  background:var(--bg2); border-top:1px solid var(--border);
+  display:flex; align-items:center; gap:8px;
+  transition:transform .12s ease;
+}
+#inputRow{
+  flex:1; display:flex; align-items:center; background:var(--input-bg);
+  border:1px solid var(--border); border-radius:22px; padding:6px 6px 6px 16px;
+}
+#inputRow textarea{flex:1; border:none; background:none; color:var(--text); font-size:14.5px; outline:none; resize:none; max-height:120px; font-family:inherit; line-height:1.4}
+#inputRow textarea::placeholder{color:var(--sub)}
+#sendBtn{
+  width:34px;height:34px;border-radius:50%; border:none; cursor:pointer;
+  background:linear-gradient(135deg,var(--accent1),var(--accent2)); color:#fff;
+  display:flex; align-items:center; justify-content:center; flex-shrink:0;
+}
+
+.brand{user-select:none; -webkit-user-select:none; -webkit-tap-highlight-color:transparent; cursor:default}
+.overlay{position:fixed; inset:0; background:rgba(0,0,0,.55); display:flex; align-items:flex-end; justify-content:center; z-index:50}
+.overlay[hidden]{display:none}
+.sheet{width:100%; max-width:520px; max-height:88%; overflow-y:auto; background:var(--bg2); color:var(--text);
+  border:1px solid var(--border); border-radius:18px 18px 0 0; padding:16px 16px calc(16px + env(safe-area-inset-bottom,0px))}
+.sheet-head{display:flex; align-items:center; justify-content:space-between; margin-bottom:12px}
+.sheet input,.sheet select{width:100%; margin-top:8px; padding:10px 12px; font-size:15px; font-family:inherit;
+  background:var(--input-bg); color:var(--text); border:1px solid var(--border); border-radius:10px}
+.btn{margin-top:10px; padding:10px 14px; border:none; border-radius:10px; font-size:14px; font-weight:600; cursor:pointer;
+  background:linear-gradient(135deg,var(--accent1),var(--accent2)); color:#fff}
+.btn.sec{background:var(--card); color:var(--text); border:1px solid var(--border)}
+.row2{display:flex; gap:8px}
+.row2 .btn{flex:1}
+.hint{font-size:12.5px; color:var(--sub); margin:8px 0 0; min-height:16px}
+.adm-item{border-top:1px solid var(--border); padding:8px 0; font-size:13px}
+.adm-item b{color:var(--accent1)}
+.adm-item button{float:right; background:none; border:none; color:#e0607a; font-size:12px; cursor:pointer}
+.md .kdisp{display:block; margin:8px 0; overflow-x:auto; overflow-y:hidden; -webkit-overflow-scrolling:touch}
+.md .katex{font-size:1.06em}
+.md .katex-display{margin:0}
+#styleBar{display:none; gap:6px; padding:8px 14px 0; overflow-x:auto; background:var(--bg2)}
+#styleBar.on{display:flex}
+#styleBar .pill{flex:none; border:1px solid var(--border); background:var(--card); color:var(--text); border-radius:14px; padding:5px 11px; font-size:12.5px; cursor:pointer; white-space:nowrap}
+#styleBar .pill.on{border-color:var(--accent1); box-shadow:0 0 0 1px var(--accent1) inset; font-weight:600}
+#galerieGrid{display:grid; grid-template-columns:1fr 1fr; gap:10px}
+.gtile{border:1px solid var(--border); border-radius:12px; padding:6px; background:var(--card)}
+.gtile img{width:100%; border-radius:8px; display:block}
+.gtile .cap{font-size:11.5px; color:var(--sub); margin:5px 0; max-height:2.8em; overflow:hidden}
+.gtile .btns{display:flex; gap:5px}
+/* ---- Cartes de documents (Excel, Word, PDF...) ---- */
+.doc-card{margin:2px 0; border:1px solid var(--border); border-radius:14px; background:var(--card); padding:12px; white-space:normal; min-width:240px}
+.doc-top{display:flex; align-items:center; gap:12px}
+.doc-ico{flex:none; position:relative; width:44px; height:54px; border-radius:7px; background:#6b7280; color:#fff; font-size:11px; font-weight:800; letter-spacing:.3px; display:flex; align-items:flex-end; justify-content:center; padding-bottom:6px}
+.doc-ico::after{content:""; position:absolute; top:0; right:0; width:14px; height:14px; border-bottom-left-radius:5px; background:linear-gradient(225deg,var(--card) 50%,rgba(255,255,255,.4) 50%)}
+.doc-ico.t-xlsx,.doc-ico.t-csv{background:#1d7a46}
+.doc-ico.t-docx{background:#2b5fb4}
+.doc-ico.t-pdf{background:#d1384a}
+.doc-ico.t-html{background:#e0702d}
+.doc-ico.t-json,.doc-ico.t-xml{background:#8a6d1d}
+.doc-nom{font-weight:600; font-size:14px; word-break:break-all}
+.doc-meta{color:var(--sub); font-size:12px; margin-top:2px}
+.doc-resume{font-size:13px; margin-top:10px; line-height:1.4}
+.doc-card .btns{display:flex; gap:6px; flex-wrap:wrap; margin-top:10px}
+.doc-card.work .doc-ico{animation:docBob 1.2s ease-in-out infinite}
+.doc-steps{list-style:none; margin:12px 0 0; padding:0; font-size:12.5px; color:var(--sub)}
+.doc-steps li{display:flex; align-items:center; gap:8px; padding:3px 0}
+.doc-steps li::before{content:""; flex:none; width:10px; height:10px; border-radius:50%; border:2px solid var(--border)}
+.doc-steps li.on{color:var(--text)}
+.doc-steps li.on::before{border-color:var(--accent1); border-top-color:transparent; animation:docSpin .8s linear infinite}
+.doc-steps li.ok::before{background:#3fb37f; border-color:#3fb37f}
+.doc-bar{height:4px; border-radius:4px; background:var(--border); overflow:hidden; margin-top:10px}
+.doc-bar i{display:block; height:100%; width:40%; border-radius:4px; background:linear-gradient(90deg,var(--accent1),var(--accent2)); animation:docSlide 1.3s ease-in-out infinite}
+@keyframes docSpin{to{transform:rotate(360deg)}}
+@keyframes docSlide{0%{transform:translateX(-100%)}100%{transform:translateX(260%)}}
+@keyframes docBob{50%{transform:translateY(-3px)}}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand" id="brand">
+    <svg viewBox="0 0 24 24"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="var(--accent1)"/><stop offset="1" stop-color="var(--accent2)"/>
+    </linearGradient></defs>
+      <path d="M13 2 L7 13 H11 L9 22 L18 9 H13 Z" fill="url(#g)"/>
+    </svg>
+    <span>Knall</span>
+  </div>
+  <div class="hdr-actions">
+    <span id="agentLabel">Général</span>
+    <button class="icon-btn" id="threadsBtn" aria-label="Conversations">💬</button>
+    <button class="icon-btn" id="menuBtn" aria-label="Choisir un agent">☰</button>
+    <button class="icon-btn" id="settingsBtn" aria-label="Paramètres">⚙️</button>
+    <div class="menu" id="menu">
+      <button data-agent="general" class="active">🤖 Général</button>
+      <button data-agent="taches">🗂️ Tâches</button>
+      <button data-agent="code">💻 Code</button>
+      <button data-agent="recherche">🔍 Recherche</button>
+      <button data-agent="redaction">✍️ Rédaction</button>
+      <button data-agent="image">🎨 Image</button>
+    </div>
+  </div>
+</header>
+<main id="chat"></main>
+<div id="fichierChip"><img id="fichierMini" alt="" style="display:none;width:30px;height:30px;border-radius:6px;object-fit:cover"><span id="fichierNom"></span><button id="fichierX">✕</button></div>
+<div id="styleBar"></div>
+<footer>
+  <button class="icon-btn" id="attachBtn" aria-label="Joindre un fichier">📎</button>
+  <button class="icon-btn" id="camBtn" aria-label="Prendre une photo">📷</button>
+  <input type="file" id="camInput" accept="image/*" capture="environment" hidden>
+  <input type="file" id="fileInput" hidden>
+  <div id="inputRow">
+    <textarea id="msgInput" rows="1" placeholder="Écrivez un message..."></textarea>
+  </div>
+  <button id="sendBtn">➤</button>
+</footer>
+
+<div id="threads" class="overlay" hidden>
+  <div class="sheet">
+    <div class="sheet-head"><b>Conversations</b><button class="icon-btn" id="threadsClose" aria-label="Fermer">✕</button></div>
+    <button class="btn" id="newThreadBtn">+ Nouvelle conversation</button>
+    <div id="threadsList"></div>
+  </div>
+</div>
+
+<div id="reglages" class="overlay" hidden>
+  <div class="sheet">
+    <div class="sheet-head"><b>⚙️ Paramètres</b><button class="icon-btn" id="reglagesClose" aria-label="Fermer">✕</button></div>
+    <div id="modeBar">
+      <button id="modeNet" class="pill"></button>
+      <p class="hint">Sans connexion : Knall répond seulement avec sa base locale.</p>
+      <button id="modeBase" class="pill"></button>
+      <p class="hint">OFF : chaque question va directement au serveur (il comprend le contexte).</p>
+      <button id="modeApprend" class="pill"></button>
+      <p class="hint">OFF : les réponses du serveur ne sont plus gardées sur le téléphone.</p>
+      <button id="modeSync" class="pill"></button>
+      <p class="hint">OFF : le téléphone ne récupère plus les connaissances ajoutées ailleurs.</p>
+      <button id="viderAppris" class="pill"></button>
+      <p class="hint" id="stockInfo"></p>
+      <button id="viderMedia" class="pill"></button>
+      <p class="hint">Images et musiques créées sont gardées sur le téléphone (hors conversation) jusqu'à ce que tu les vides.</p>
+      <button id="themeBtn" class="pill">◐ Changer le thème</button>
+    </div>
+  </div>
+</div>
+
+<div id="admin" class="overlay" hidden>
+  <div class="sheet">
+    <div class="sheet-head"><b>Menu admin</b><button class="icon-btn" id="adminClose" aria-label="Fermer">✕</button></div>
+    <div id="pinView">
+      <input id="pin" type="password" inputmode="numeric" maxlength="6" placeholder="Code" autocomplete="off">
+      <button class="btn" id="pinOk">Ouvrir</button>
+      <p class="hint" id="pinMsg"></p>
+    </div>
+    <div id="adminView" hidden>
+      <select id="admAgent">
+        <option value="general">Agent : Général</option>
+        <option value="taches">Agent : Tâches</option>
+        <option value="code">Agent : Code</option>
+        <option value="recherche">Agent : Recherche</option>
+        <option value="redaction">Agent : Rédaction</option>
+      </select>
+      <input id="admQ" placeholder="Question">
+      <input id="admR" placeholder="Réponse">
+      <input id="admT" placeholder="Tags séparés par des virgules (facultatif)">
+      <button class="btn" id="admAdd">Ajouter</button>
+      <p class="hint" id="admMsg"></p>
+      <div class="row2">
+        <button class="btn sec" id="admExport">Exporter .json</button>
+        <button class="btn sec" id="admImportBtn">Importer .json</button>
+      </div>
+      <input type="file" id="admFile" accept=".json,application/json" hidden>
+      <button class="btn sec" id="admTest">Tester les API</button>
+      <pre class="hint" id="admTestOut" style="white-space:pre-wrap"></pre>
+      <p class="hint" id="admCount"></p>
+      <div id="admList"></div>
+    </div>
+  </div>
+</div>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+<div id="galerie" class="overlay" hidden>
+  <div class="sheet">
+    <div class="sheet-head"><b>🖼️ Mes images</b><button class="icon-btn" id="galerieClose" aria-label="Fermer">✕</button></div>
+    <p class="hint" id="galerieVide" hidden>Aucune image pour le moment. Décris-en une pour commencer.</p>
+    <div id="galerieGrid"></div>
+  </div>
+</div>
+<script>
+/* ---- Firebase : konesans admin yo pataje ant tout aparèy, konvèsasyon rete lokal ---- */
+const firebaseConfig = {
+  apiKey: "AIzaSyDVcE23SZKF941Q9AI31vpwJRt1aw1QWQo",
+  authDomain: "knall-b14e6.firebaseapp.com",
+  databaseURL: "https://knall-b14e6-default-rtdb.firebaseio.com",
+  projectId: "knall-b14e6",
+  storageBucket: "knall-b14e6.firebasestorage.app",
+  messagingSenderId: "259374045941",
+  appId: "1:259374045941:web:4ab884c3d967dda34343bc",
+  measurementId: "G-L9387S88T6"
+};
+let db = null, fbPret = false;
+try{
+  firebase.initializeApp(firebaseConfig);
+  db = firebase.firestore();
+  firebase.auth().signInAnonymously().then(() => { fbPret = true; synchroniserConnaissances(); }).catch(e => console.error("Firebase auth:", e.message));
+}catch(e){ console.error("Firebase init:", e.message); }
+
+// Anvoye yon konesans nouvo bay tout aparèy
+async function pousseConnaissanceFirebase(agent, item){
+  if(!db) return;
+  try{ await db.collection("knowledge").doc(agent).collection("items").doc(item.id).set(item); }
+  catch(e){ console.error("Firebase push:", e.message); }
+}
+// Rale konesans lòt moun te ajoute, mete yo nan KB si yo poko la
+async function synchroniserConnaissances(){
+  if(!db) return;
+  try{ if(localStorage.getItem("knall-sync") === "0") return; }catch(e){}
+  for(const agent of Object.keys(KB)){
+    try{
+      const snap = await db.collection("knowledge").doc(agent).collection("items").get();
+      const connus = new Set(KB[agent].map(x => x.id));
+      snap.forEach(doc => { if(!connus.has(doc.id)) KB[agent].push(doc.data()); });
+    }catch(e){ console.error("Firebase sync " + agent + ":", e.message); }
+  }
+}
+</script>
+<script>
+/* ---- Configuration du serveur relais (Render) ---- */
+const PROXY_URL = "https://knall-1.onrender.com";
+const APP_TOKEN = "Knall2026SecretXk9";
+const $ = id => document.getElementById(id);
+const _lire = (k, d) => { try{ const v = localStorage.getItem(k); return v === null ? d : v === "1"; }catch(e){ return d; } };
+let MODE_EN_LIGNE = _lire("knall-online", true);   // true = avec internet, false = sans connexion (base locale seulement)
+let BASE_LOCALE = _lire("knall-base", true);       // ma propre recherche (base locale) ON/OFF
+let APPRENDRE = _lire("knall-apprendre", true); // sauvegarde les reponses du serveur dans la base locale (reglable)
+
+/* ---- Bases de connaissances locales, chargees depuis des fichiers JSON (un par agent) ---- */
+let KB = {general:[], taches:[], code:[], recherche:[], redaction:[]};
+/* Connaissances intégrées : servent si le dossier knowledge/ n'est pas sur le site */
+const KB_INTEGREE = {"code": [{"id": "c001", "question": "comment faire une fonction en javascript", "reponse": "Voici un exemple de fonction :\n```javascript fonction.js\nfunction nom(param) {\n  return param;\n}\n```\nOn écrit le mot function, un nom, des paramètres entre parenthèses, puis le code entre accolades.", "tags": ["javascript", "fonction", "code"]}, {"id": "c002", "question": "comment centrer une div en css", "reponse": "Mets ceci sur le parent :\n```css centrer.css\n.parent {\n  display: flex;\n  justify-content: center;\n  align-items: center;\n}\n```", "tags": ["css", "centrer", "div"]}, {"id": "c003", "question": "comment faire une page html simple", "reponse": "Voici une page HTML de base :\n```html page.html\n<!DOCTYPE html>\n<html lang=\"fr\">\n<head>\n  <meta charset=\"UTF-8\">\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n  <title>Ma page<\/title>\n<\/head>\n<body>\n  <h1>Bonjour<\/h1>\n  <a href=\"https://exemple.com\">Un lien<\/a>\n<\/body>\n<\/html>\n```", "tags": ["html", "page", "site", "base", "lien"]}], "general": [{"id": "g001", "question": "idée de repas rapide et sain", "reponse": "Bol de quinoa au poulet et légumes : quinoa, poulet grillé, avocat, tomates, concombre, sauce au citron.", "tags": ["repas", "cuisine", "manger"]}, {"id": "g002", "question": "comment redémarrer l'application", "reponse": "Ferme complètement Knall puis rouvre-le depuis l'icône.", "tags": ["redemarrer", "bug", "probleme"]}, {"id": "g003", "question": "qui es-tu", "reponse": "Je suis Knall, ton assistant qui fonctionne avec ou sans connexion internet.", "tags": ["knall", "qui", "identite"]}], "recherche": [{"id": "r001", "question": "meteo", "reponse": "La recherche web nécessite une connexion internet active.", "tags": ["meteo", "internet", "recherche"]}], "redaction": [{"id": "d001", "question": "comment faire une introduction", "reponse": "Une introduction a 4 temps : 1) accroche, 2) présentation du sujet, 3) problématique, 4) annonce du plan.", "tags": ["introduction", "dissertation", "plan"]}, {"id": "d002", "question": "comment faire une conclusion", "reponse": "Une conclusion a 2 temps : 1) bilan qui répond à la problématique, 2) ouverture vers une question proche.", "tags": ["conclusion", "dissertation"]}, {"id": "d003", "question": "connecteurs logiques", "reponse": "Addition : de plus, en outre. Opposition : cependant, pourtant. Cause : car, en effet. Conséquence : donc, ainsi. Conclusion : enfin, en somme.", "tags": ["connecteurs", "liaison", "mots"]}, {"id": "d004", "question": "quelle est la difference entre argument et exemple", "reponse": "L'argument est la raison qui appuie ton idée. L'exemple est le fait précis qui prouve cet argument.", "tags": ["argument", "exemple", "difference"]}], "taches": [{"id": "t001", "question": "créer un rappel", "reponse": "Dis-moi quoi et à quelle heure, ex: 'rappelle-moi d'appeler Marc à 15h'.", "tags": ["rappel", "reminder", "heure"]}, {"id": "t002", "question": "liste de mes tâches", "reponse": "Tu n'as aucune tâche enregistrée pour le moment.", "tags": ["taches", "liste", "todo"]}]};
+async function chargerKB(){
+  // Chaque agent a son dossier : knowledge/<agent>/ avec index.json (liste des fichiers) + fichiers .json
+  for(const agent of Object.keys(KB)){
+    const base = "knowledge/" + agent + "/";
+    let fichiers = [];
+    try{
+      const ir = await fetch(base + "index.json");
+      if(ir.ok) fichiers = (await ir.json()).map(f => base + f);
+    }catch(e){ console.error("Index KB " + agent + ":", e.message); }
+    if(!fichiers.length) fichiers = ["knowledge/" + agent + ".json"]; // ancien format (un seul fichier)
+    const vus = new Set();
+    for(const f of fichiers){
+      try{
+        const res = await fetch(f);
+        if(!res.ok) continue;
+        const items = await res.json();
+        if(!Array.isArray(items)) continue;
+        items.forEach((it, i) => {
+          if(!it || typeof it.question !== "string" || typeof it.reponse !== "string") return;
+          const id = it.id || (agent + "-" + f.split("/").pop() + "-" + i);
+          if(vus.has(id)) return;
+          vus.add(id);
+          KB[agent].push({id, question: it.question, reponse: it.reponse, tags: Array.isArray(it.tags) ? it.tags : []});
+        });
+      }catch(e){ console.error("Chargement KB " + f + ":", e.message); }
+    }
+    if(!KB[agent].length && KB_INTEGREE[agent]) KB[agent].push(...KB_INTEGREE[agent]); // fichiers introuvables : connaissances intégrées
+  }
+}
+const NOMS = {general:"Général", taches:"Tâches", code:"Code", recherche:"Recherche", redaction:"Rédaction", image:"Image"};
+let agentActif = "general";
+
+/* ---- Fils de conversation : chaque paj gen son tit ak son istwa a li ---- */
+let threads = [];
+let threadId = null;
+function nouvelId(){ return "th" + Date.now() + Math.floor(Math.random()*1000); }
+function videHist(){ return {general:[], taches:[], code:[], recherche:[], redaction:[], image:[]}; }
+function chargerThreads(){
+  try{ threads = JSON.parse(localStorage.getItem('knall-threads') || '[]'); }catch(e){ threads = []; }
+  if(!threads.length){
+    threads = [{id: nouvelId(), titre: "Nouvo konvèsasyon", agent: "general", vues: [], hist: videHist()}];
+  }
+}
+function sauverThreads(){ try{ localStorage.setItem('knall-threads', JSON.stringify(threads)); }catch(e){} }
+function threadActif(){ return threads.find(t => t.id === threadId) || threads[0]; }
+const hist = new Proxy({}, { get: (_, agent) => { const h = threadActif().hist; return h[agent] || (h[agent] = []); } }); // compatibilite avec appelerServeur
+
+function nouvelleConversation(){
+  const t = {id: nouvelId(), titre: "Nouvo konvèsasyon", agent: agentActif, vues: [], hist: videHist()};
+  threads.unshift(t); threadId = t.id; sauverThreads();
+  ouvrirConversation(t.id);
+  fermerThreads();
+}
+function ouvrirConversation(id){
+  threadId = id;
+  try{ localStorage.setItem('knall-dernier-fil', id); }catch(e){}
+  const t = threadActif();
+  agentActif = t.agent;
+  agentLabel.textContent = NOMS[agentActif]; majBarreImage();
+  menu.querySelectorAll('button').forEach(x => x.classList.toggle('active', x.dataset.agent === agentActif));
+  chat.innerHTML = '';
+  t.vues.forEach(m => m.media ? afficherMedia(m) : afficherMsg(m.type, m.texte));
+  if(!t.vues.length) ajouterMsg("sys", "Agent actif : " + NOMS[agentActif]);
+}
+function renommerSiPremier(texte){
+  const t = threadActif();
+  if(t.titre === "Nouvo konvèsasyon"){ t.titre = texte.slice(0, 40) + (texte.length > 40 ? "…" : ""); sauverThreads(); }
+}
+function renderThreadsList(){
+  const liste = document.getElementById('threadsList');
+  liste.innerHTML = '';
+  threads.forEach(t => {
+    const d = document.createElement('div'); d.className = 'adm-item'; d.style.cursor = 'pointer';
+    const del = document.createElement('button'); del.textContent = 'supprimer';
+    del.onclick = ev => {
+      ev.stopPropagation();
+      threads = threads.filter(x => x.id !== t.id);
+      if(!threads.length) threads = [{id: nouvelId(), titre: "Nouvo konvèsasyon", agent: "general", vues: [], hist: videHist()}];
+      sauverThreads();
+      if(t.id === threadId) ouvrirConversation(threads[0].id);
+      renderThreadsList();
+    };
+    const titre = document.createElement('b'); titre.textContent = (t.id === threadId ? "▶ " : "") + t.titre;
+    d.append(del, titre, document.createElement('br'), document.createTextNode(NOMS[t.agent]));
+    d.onclick = () => { ouvrirConversation(t.id); fermerThreads(); };
+    liste.appendChild(d);
+  });
+}
+function ouvrirThreads(){ renderThreadsList(); document.getElementById('threads').hidden = false; }
+function fermerThreads(){ document.getElementById('threads').hidden = true; }
+document.getElementById('threadsBtn').onclick = ouvrirThreads;
+document.getElementById('threadsClose').onclick = fermerThreads;
+document.getElementById('threads').addEventListener('click', e => { if(e.target.id === 'threads') fermerThreads(); });
+document.getElementById('newThreadBtn').onclick = nouvelleConversation;
+
+/* ---- Connaissances apprises (gardees sur l'appareil) ---- */
+function chargerAppris(){
+  try{
+    const a = JSON.parse(localStorage.getItem('knall-appris') || '{}');
+    for(const k in a){ if(KB[k]) KB[k].push(...a[k]); }
+  }catch(e){}
+}
+function sauverAppris(agent, q, r){
+  const item = {id:"auto"+Date.now(), question:q, reponse:r, tags:[]};
+  KB[agent].push(item);
+  try{
+    const a = JSON.parse(localStorage.getItem('knall-appris') || '{}');
+    (a[agent] = a[agent] || []).push(item);
+    localStorage.setItem('knall-appris', JSON.stringify(a));
+  }catch(e){}
+}
+/* ---- MOTEUR (recherche + rédaction, 100% hors ligne) ---- */
+const norm = s => s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
+const STOP = new Set("les des une aux que qui pour par sur dans avec sans est sont pas plus comme mais donc car ont ete etre cette ces ses son mon ton tes mes nos vos leur leurs nous vous ils elles elle lui moi toi mwen nan ak epi yon tout comment faire fait quel quelle quels quoi kijan the and".split(" "));
+const SYN = {bouffe:"repas",manger:"repas",mange:"repas",nourriture:"repas",dejeuner:"repas",diner:"repas",souper:"repas",erreur:"bug",probleme:"bug",panne:"bug",bloque:"bug",relancer:"redemarrer",relance:"redemarrer",reboot:"redemarrer",alarme:"rappel",rappeler:"rappel",tache:"taches",todo:"taches"};
+const tok = s => norm(s).split(/[^a-z0-9]+/).filter(m => m.length > 2 && !STOP.has(m)).map(m => SYN[m] || m);
+const rac = m => m.length > 5 ? m.slice(0,5) : m.replace(/[sx]$/,"");
+
+function chercherReponse(question, base){
+  const q = [...new Set(tok(question).map(rac))];
+  if(!q.length) return null;
+  let meilleur = null, best = 0;
+  for(const item of base){
+    const qs = new Set(tok(item.question).map(rac));
+    const ts = new Set((item.tags || []).flatMap(t => tok(t)).map(rac));
+    let score = 0;
+    for(const m of q){ if(qs.has(m) || ts.has(m)) score++; }
+    // reponses apprises du serveur (id "auto…") : seulement si la question est quasi identique
+    if(String(item.id).startsWith("auto") && jac(new Set(q), qs) < 0.75) continue;
+    if(score > best){ best = score; meilleur = item; }
+  }
+  const assez = q.length === 1 ? best === 1 : best >= 2;   // un seul mot en commun ne suffit plus
+  return (assez && best / q.length >= 0.6) ? meilleur.reponse : null;
+}
+
+/* ---- Agent Rédaction ---- */
+const CONNECT = ["d'abord","ensuite","de plus","en effet","cependant","pourtant","toutefois","donc","par consequent","en conclusion","enfin","ainsi","par ailleurs","or","car","mais","en outre","neanmoins","d'une part","d'autre part"];
+const phrases = t => t.split(/(?<=[.!?…])\s+|\n+/).map(s => s.trim()).filter(Boolean);
+const nbMots = t => (t.trim().match(/\S+/g) || []).length;
+const jac = (a, b) => { const u = new Set([...a, ...b]); if(!u.size) return 0; let c = 0; a.forEach(x => { if(b.has(x)) c++; }); return c / u.size; };
+const liste = (arr, max = 15) => arr.length ? arr.slice(0, max).join(", ") + (arr.length > max ? " … (+" + (arr.length - max) + ")" : "") : "—";
+const reste = q => q.replace(/^\s*\S+\s*(?:(?:sur|de|du|des|d')\s*|:\s*)?/i, "").trim();
+
+function comparer(a, b){
+  const sa = new Set(tok(a)), sb = new Set(tok(b));
+  if(!sa.size || !sb.size) return "Les deux textes doivent contenir plus de mots.";
+  const com = [...sa].filter(x => sb.has(x)), ua = [...sa].filter(x => !sb.has(x)), ub = [...sb].filter(x => !sa.has(x));
+  const sim = Math.round(100 * com.length / new Set([...sa, ...sb]).size);
+  const verdict = sim >= 70 ? "textes très proches" : sim >= 40 ? "textes proches" : sim >= 20 ? "peu de points communs" : "textes très différents";
+  const pa = phrases(a), pb = phrases(b), vusB = new Set();
+  const lignes = pa.map((p, i) => {
+    let bj = -1, bs = 0; const sp = new Set(tok(p));
+    pb.forEach((q, j) => { const s = jac(sp, new Set(tok(q))); if(s > bs){ bs = s; bj = j; } });
+    const pct = Math.round(bs * 100);
+    if(pct >= 30) vusB.add(bj);
+    return pct >= 60 ? "A" + (i+1) + " ≈ B" + (bj+1) + " (" + pct + " %) même idée"
+         : pct >= 30 ? "A" + (i+1) + " ~ B" + (bj+1) + " (" + pct + " %) idée voisine"
+         : "A" + (i+1) + " : idée absente de B";
+  });
+  pb.forEach((_, j) => { if(!vusB.has(j)) lignes.push("B" + (j+1) + " : idée absente de A"); });
+  return "📊 COMPARAISON\nRessemblance : " + sim + " % — " + verdict +
+    "\nLongueur : A " + nbMots(a) + " mots · B " + nbMots(b) + " mots" +
+    "\n\n✅ En commun : " + liste(com) + "\n🅰️ Seulement dans A : " + liste(ua) + "\n🅱️ Seulement dans B : " + liste(ub) +
+    "\n\n🔎 PHRASE PAR PHRASE\n" + lignes.join("\n");
+}
+
+function planDissertation(s){
+  if(!s) return "Donne-moi le sujet. Ex : dissertation : l'éducation est-elle la clé du développement ?";
+  return "📝 PLAN DE DISSERTATION\nSujet : " + s +
+    "\n\nINTRODUCTION\n1. Accroche : un fait, une citation ou une question liée au sujet\n2. Présentation : définir les mots clés de « " + s + " »\n3. Problématique : une question précise qui découle du sujet\n4. Annonce du plan : dire les grandes parties" +
+    "\n\nI. THÈSE (oui / arguments pour)\n• Argument 1 → explication → exemple\n• Argument 2 → explication → exemple\n→ Transition" +
+    "\n\nII. ANTITHÈSE (non / limites)\n• Argument 1 → explication → exemple\n• Argument 2 → explication → exemple\n→ Transition" +
+    "\n\nIII. SYNTHÈSE (dépasser l'opposition)\n• Position nuancée et justifiée\n• Exemple qui la confirme" +
+    "\n\nCONCLUSION\n1. Bilan : répondre clairement à la problématique\n2. Ouverture : élargir vers une question proche";
+}
+
+function argumenter(s){
+  if(!s) return "Donne-moi l'idée à défendre. Ex : argument : les jeunes doivent apprendre un métier.";
+  return "💬 CONSTRUIRE UN ARGUMENT\nIdée à défendre : " + s +
+    "\n\n1. Affirmation : dis clairement ta position (« Je pense que… »)\n2. Raison : pourquoi ? (« En effet, car… »)\n3. Preuve / exemple : un fait précis, un chiffre, un cas réel\n4. Objection : ce que l'autre pourrait répondre (« Certains diront que… »)\n5. Réfutation : pourquoi l'objection est faible (« Cependant… »)\n6. Conclusion : reformule (« Donc, ainsi… »)" +
+    "\n\nConnecteurs utiles : d'abord, de plus, en effet, par ailleurs, cependant, en conclusion.";
+}
+
+function analyser(t){
+  if(!t) return "Colle le texte après le mot analyse. Ex : analyse : ton texte ici";
+  const ph = phrases(t), n = nbMots(t), mots = tok(t), freq = {};
+  mots.forEach(m => freq[m] = (freq[m] || 0) + 1);
+  const tri = Object.entries(freq).sort((x, y) => y[1] - x[1]);
+  const rep = tri.filter(([, c]) => c >= 3).slice(0, 6).map(([m, c]) => m + " ×" + c);
+  const cles = tri.slice(0, 8).map(([m]) => m);
+  const nt = norm(t);
+  const conn = CONNECT.filter(c => new RegExp("(^|[^a-z])" + norm(c).replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "([^a-z]|$)").test(nt));
+  const longues = ph.map((p, i) => [i + 1, nbMots(p)]).filter(([, k]) => k > 30).map(([i, k]) => "phrase " + i + " (" + k + " mots)");
+  return "🔬 ANALYSE DU TEXTE\n" + n + " mots · " + ph.length + " phrase(s) · moyenne " + (ph.length ? Math.round(n / ph.length) : 0) + " mots/phrase" +
+    "\n\n🔑 Mots clés : " + liste(cles) + "\n🔁 Répétitions : " + liste(rep) + "\n🔗 Connecteurs : " + liste(conn) +
+    "\n📏 Phrases trop longues : " + liste(longues) +
+    (conn.length < 2 ? "\n\n💡 Ajoute des connecteurs (de plus, cependant, donc) pour mieux enchaîner les idées." : "");
+}
+
+const AIDE_REDACTION = "✍️ AGENT RÉDACTION — commandes\n\n• compare : texte A ||| texte B\n• dissertation : ton sujet\n• argument : l'idée à défendre\n• analyse : ton texte\n\nSépare les deux textes avec |||";
+
+function redaction(q){
+  const n = norm(q).trim();
+  if(/^(aide|ed|help|commandes?)\s*$/.test(n)) return AIDE_REDACTION;
+  const cmdCompare = /^(compare|comparer|comparaison|konpare|konparezo|diferans|difference)/.test(n);
+  if(cmdCompare || q.includes("|||")){
+    const parts = (cmdCompare ? reste(q) : q).split(/\|\|\||###/).map(x => x.trim()).filter(Boolean);
+    return parts.length >= 2 ? comparer(parts[0], parts[1]) : "Pour comparer, écris : compare : texte A ||| texte B";
+  }
+  if(/^(dissertation|disetasyon|plan)/.test(n)) return planDissertation(reste(q));
+  if(/^(argument|agiman)/.test(n)) return argumenter(reste(q));
+  if(/^(analyse|analyser|analiz)/.test(n)) return analyser(reste(q));
+  return null;
+}
+/* ---- Routage automatique : envoie la question vers le bon agent ---- */
+const ROUTAGE_AUTO = true; // true = Knall PROPOSE un autre agent (bouton), sans jamais changer tout seul ; false = aucune proposition
+const MOTS_AGENT = {
+  code: {
+    2: ["code","kod","html","css","javascript","js","python","php","sql","java","json","api","bug","fonction","fonksyon","variable","boucle","script","algorithme","programmer","programmation","pwogram","balise","react","firebase","github","git","debug","compiler","apk","capacitor","framework","base de donnees","div","*programm"],
+    1: ["erreur","site","application","app","web","fichier","serveur","ligne de code","developpeur","dev"]
+  },
+  taches: {
+    2: ["rappel","rapel","rappelle","rappeler","tache","taches","todo","agenda","calendrier","rendez vous","rdv","planning","deadline","echeance","alarme","reunion","a faire","liste de courses","organiser ma journee","*planifi"],
+    1: ["demain","aujourd hui","semaine","programme","priorite","checklist"]
+  },
+  redaction: {
+    2: ["dissertation","disetasyon","argumenter","argument","agiman","comparer","compare","konpare","konparezo","paragraphe","redaction","rediger","grammaire","orthographe","conjugaison","synthese","antithese","problematique","*corrig","analyse de texte"],
+    1: ["texte","phrase","phrases","introduction","conclusion","expression","ecrire","lettre","resume"]
+  },
+  recherche: {
+    2: ["recherche","cherche","chercher","trouve","trouver","informations","infos","information","definition","definir","definis","source","sources","actualite","actualites","wikipedia","biographie","histoire de","*rechech"],
+    1: ["documentation","renseigne","renseigner"]
+  }
+};
+function detecterAgent(question, courant){
+  const n = " " + norm(question).replace(/[^a-z0-9]+/g, " ") + " ";
+  const sc = {general:0, code:0, taches:0, redaction:0, recherche:0};
+  for(const ag in MOTS_AGENT){
+    for(const poids in MOTS_AGENT[ag]){
+      for(const kw of MOTS_AGENT[ag][poids]){
+        const ok = kw[0] === "*" ? n.includes(" " + kw.slice(1)) : n.includes(" " + kw + " ");
+        if(ok) sc[ag] += +poids;
+      }
+    }
+  }
+  if(question.includes("|||")) sc.redaction += 3;
+  if(/\b\d{1,2}\s?h(\s?\d{2})?\b/i.test(question)) sc.taches += 1;
+  if(/[{};<>]|=>|<\/|\bfunction\b/.test(question)) sc.code += 2;
+  const cible = Object.keys(sc).sort((a, b) => sc[b] - sc[a])[0];
+  const autre = Object.keys(sc).filter(a => a !== cible).map(a => sc[a]).sort((a, b) => b - a)[0];
+  if(sc[cible] < 2 || sc[cible] <= autre) return null;       // pas assez sûr
+  if(cible === courant) return null;
+  if(sc[cible] < (sc[courant] || 0) + 2) return null;        // l'agent actuel colle presque autant : on reste
+  return cible;
+}
+/* ---- FIN MOTEUR ---- */
+
+
+/* ---- Appel du serveur relais ---- */
+async function appelerServeur(agent, question, image){
+  const indice = agent === "code" ? "\n\n(Donne chaque code dans un bloc ```langage nomdufichier.ext``` et garde l'explication courte, en dehors du bloc.)" : "";
+  const messages = hist[agent].slice(-10).concat([{role:"user", content:question + indice}]);
+  const requete = fetch(PROXY_URL.replace(/\/$/, "") + "/chat", {
+    method: "POST",
+    headers: {"Content-Type":"application/json", "x-knall-token": APP_TOKEN},
+    body: JSON.stringify(image ? {agent, messages, images:[image]} : {agent, messages})
+  });
+  const delai = new Promise((_, rej) => setTimeout(() => rej(new Error("délai dépassé")), 70000));
+  const res = await Promise.race([requete, delai]); // Render gratuit: reveil possible ~1 min
+  const data = await res.json().catch(() => ({}));
+  if(!res.ok) throw new Error(data.error || ("Erreur " + res.status));
+  return data.reponse;
+}
+
+/* ---- Menu agents ---- */
+const menuBtn=document.getElementById('menuBtn'), menu=document.getElementById('menu'), agentLabel=document.getElementById('agentLabel');
+menuBtn.onclick=()=>menu.classList.toggle('open');
+document.addEventListener('click',e=>{ if(!menu.contains(e.target)&&e.target!==menuBtn) menu.classList.remove('open'); });
+menu.querySelectorAll('button').forEach(b=>b.onclick=()=>{
+  menu.querySelectorAll('button').forEach(x=>x.classList.remove('active'));
+  b.classList.add('active');
+  agentActif = b.dataset.agent;
+  threadActif().agent = agentActif;
+  sauverThreads();
+  agentLabel.textContent = NOMS[agentActif]; majBarreImage();
+  menu.classList.remove('open');
+  ajouterMsg("sys", "Agent actif : " + NOMS[agentActif]);
+  if(agentActif === "redaction") ajouterMsg("sys", "Tape « aide » pour voir les commandes.");
+  if(agentActif === "image") ajouterMsg("sys", "🎨 Décris l'image que tu veux : chaque message crée une image. Choisis le style en bas (Réaliste par défaut).");
+});
+
+/* ---- Thème ---- */
+const themeBtn=document.getElementById('themeBtn');
+function applyTheme(t){ document.documentElement.setAttribute('data-theme',t); try{localStorage.setItem('knall-theme',t)}catch(e){} }
+let saved=null; try{saved=localStorage.getItem('knall-theme')}catch(e){}
+applyTheme(saved||'dark');
+themeBtn.onclick=()=>{ const cur=document.documentElement.getAttribute('data-theme'); applyTheme(cur==='light'?'dark':'light'); };
+
+/* ---- Fichier joint : lu en local, envoyé avec le prochain message ---- */
+if(window.pdfjsLib) pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+async function lirePDF(buf){
+  const doc = await pdfjsLib.getDocument({data: buf}).promise;
+  let t = "";
+  for(let i=1;i<=doc.numPages;i++){ const p = await doc.getPage(i); const c = await p.getTextContent(); t += c.items.map(x=>x.str).join(" ") + "\n"; }
+  return t;
+}
+async function lireDocx(buf){ return (await mammoth.extractRawText({arrayBuffer: buf})).value; }
+// Excel (.xlsx .xls .ods) : la librairie se charge seulement quand on joint un tableur
+let _xlsxPret = null;
+function chargerXLSX(){
+  if(window.XLSX) return Promise.resolve();
+  if(!_xlsxPret) _xlsxPret = new Promise((ok, ko) => {
+    const sc = document.createElement("script");
+    sc.src = "https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js";
+    sc.onload = ok; sc.onerror = () => { _xlsxPret = null; ko(new Error("lecture Excel indisponible (internet ?)")); };
+    document.head.appendChild(sc);
+  });
+  return _xlsxPret;
+}
+async function lireExcel(buf){
+  await chargerXLSX();
+  const wb = XLSX.read(buf, {type:"array"});
+  return wb.SheetNames.slice(0, 5).map(n => "### Feuille « " + n + " »\n" + XLSX.utils.sheet_to_csv(wb.Sheets[n])).join("\n\n");
+}
+// Li yon fichye tèks an eseye UTF-8 dabò ; si sa bay karaktè kraze (encodage Windows-1252/Latin-1), retounen li ak bon ankòdaj la
+function lireTexteAvecEncodage(buf){
+  const utf8 = new TextDecoder("utf-8", {fatal:false}).decode(buf);
+  if(utf8.includes("\uFFFD")) return new TextDecoder("windows-1252").decode(buf);
+  return utf8;
+}
+let fichierJoint = null;
+function renderFichierJoint(){
+  const chip = $("fichierChip");
+  const mini = $("fichierMini");
+  if(fichierJoint){
+    chip.classList.add("on");
+    $("fichierNom").textContent = (fichierJoint.pending ? "⏳ Lecture de l'image… " : "📎 ") + fichierJoint.nom;
+    if(fichierJoint.image){ mini.src = fichierJoint.image; mini.style.display = "block"; } else mini.style.display = "none";
+  }else{ chip.classList.remove("on"); mini.style.display = "none"; }
+}
+$("attachBtn").onclick = () => $("fileInput").click();
+$("fichierX").onclick = () => { fichierJoint = null; renderFichierJoint(); };
+/* ---- Photos de documents / screenshots : réduction + lecture du texte (OCR) ---- */
+function chargerImage(f){
+  return new Promise((ok, ko) => {
+    const url = URL.createObjectURL(f), img = new Image();
+    img.onload = () => {
+      const k = Math.min(1, 1600 / Math.max(img.width, img.height));
+      const c = document.createElement("canvas"); c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
+      c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+      URL.revokeObjectURL(url); ok(c.toDataURL("image/jpeg", 0.85));
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); ko(new Error("image illisible")); };
+    img.src = url;
+  });
+}
+let _ocrPret = null;
+function chargerOCR(){
+  if(window.Tesseract) return Promise.resolve();
+  if(!_ocrPret) _ocrPret = new Promise((ok, ko) => {
+    const sc = document.createElement("script");
+    sc.src = "https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js";
+    sc.onload = ok; sc.onerror = () => { _ocrPret = null; ko(new Error("lecture d'image indisponible (internet ?)")); };
+    document.head.appendChild(sc);
+  });
+  return _ocrPret;
+}
+async function lireImage(dataUrl){
+  await chargerOCR();
+  const r = await Tesseract.recognize(dataUrl, "fra+eng");
+  return ((r.data && r.data.text) || "").trim();
+}
+async function joindre(e){
+  const f = e.target.files[0]; if(!f) return;
+  const ext = f.name.split(".").pop().toLowerCase();
+  try{
+    if(/^image\//.test(f.type)){
+      const data = await chargerImage(f);
+      const fj = { nom: f.name || "photo.jpg", image: data, texte: "", pending: true };
+      fichierJoint = fj; renderFichierJoint();
+      lireImage(data).then(t => {
+        fj.texte = (t || "(aucun texte détecté dans l'image)").slice(0, 6000);
+      }).catch(err => {
+        fj.texte = "(lecture du texte impossible : " + err.message + ")";
+        ajouterMsg("sys", "Image jointe, mais : " + err.message);
+      }).finally(() => { fj.pending = false; if(fichierJoint === fj) renderFichierJoint(); });
+    }else{
+      let texte;
+      if(ext === "pdf") texte = await lirePDF(await f.arrayBuffer());
+      else if(ext === "docx") texte = await lireDocx(await f.arrayBuffer());
+      else if(/^(xlsx|xlsm|xls|ods)$/.test(ext)) texte = await lireExcel(await f.arrayBuffer());
+      else{
+        texte = lireTexteAvecEncodage(await f.arrayBuffer());
+        if((texte.slice(0, 4000).match(/[\u0000-\u0008\u000E-\u001F]/g) || []).length > 5) throw new Error("ce format n'est pas lisible comme du texte");
+      }
+      fichierJoint = { nom: f.name, texte: texte.slice(0, 6000) };
+      renderFichierJoint();
+    }
+  }catch(err){ ajouterMsg("sys", "Impossible de lire " + (f.name || "le fichier") + " : " + err.message); }
+  e.target.value = "";
+}
+$("fileInput").onchange = joindre;
+$("camInput").onchange = joindre;
+$("camBtn").onclick = () => $("camInput").click();
+
+/* ---- Génération d'image (Pollinations, via le serveur relais) ---- */
+const DECLENCHEUR_MUSIQUE = /^(musique|music|mizik|compose(-moi)?\s+(une\s+|yon\s+)?(musique|m[ée]lodie|mizik)|cr[ée]e(-moi)?\s+(une\s+)?(musique|m[ée]lodie)|fè\s+yon\s+mizik)\s*[:\-]?\s*/i;
+const DECLENCHEUR_IMAGE = /^(photo\s*[:\-]|illustration\s*[:\-]|(?:(fais|fè|fe)(-moi)?\s+(une|yon)\s+(image|imaj|photo)|image|imaj|g[ée]n[èe]re(-|\s+)?(moi\s+)?(une\s+)?image|dessine(-moi)?|dessin|cr[ée]e(-moi)?\s+(une\s+)?image|fè\s+yon\s+imaj)(?![a-zà-ÿ])\s*[:\-]?)\s*/i;
+/* ---- Stockage des images / musiques (IndexedDB, hors du localStorage) ---- */
+let _mdb = null;
+function mediaDB(){
+  return _mdb || (_mdb = new Promise((ok, ko) => {
+    try{
+      const r = indexedDB.open("knall-media", 1);
+      r.onupgradeneeded = () => r.result.createObjectStore("m");
+      r.onsuccess = () => ok(r.result); r.onerror = () => ko(r.error);
+    }catch(e){ ko(e); }
+  }));
+}
+const mediaOp = (mode, f) => mediaDB().then(db => new Promise((ok, ko) => {
+  const st = db.transaction("m", mode).objectStore("m"), rq = f(st);
+  rq.onsuccess = () => ok(rq.result); rq.onerror = () => ko(rq.error);
+}));
+const mediaSave = (id, blob) => mediaOp("readwrite", st => st.put(blob, id)).catch(() => {});
+const mediaGet = id => mediaOp("readonly", st => st.get(id)).catch(() => null);
+const mediaCount = () => mediaOp("readonly", st => st.count()).catch(() => 0);
+const mediaClear = () => mediaOp("readwrite", st => st.clear()).catch(() => {});
+
+async function sauverBlob(nom, blob, btn, partager){
+  const flash = t => { if(btn){ const o = btn.textContent; btn.textContent = t; setTimeout(() => btn.textContent = o, 1600); } };
+  const P = window.Capacitor && window.Capacitor.Plugins;
+  if(P && P.Filesystem && P.Share){
+    try{
+      const b64 = await new Promise((ok, ko) => { const r = new FileReader(); r.onload = () => ok(String(r.result).split(",")[1]); r.onerror = ko; r.readAsDataURL(blob); });
+      const r = await P.Filesystem.writeFile({path:nom, data:b64, directory:"CACHE"});
+      await P.Share.share({title:nom, url:r.uri, dialogTitle:"Ouvrir avec…"});
+      return;
+    }catch(e){ if(e && /cancel/i.test(e.message || "")) return; }
+  }
+  if(partager){
+    try{
+      const f = new File([blob], nom, {type: blob.type});
+      if(navigator.canShare && navigator.canShare({files:[f]})){ await navigator.share({files:[f], title:nom}); return; }
+    }catch(e){ if(e && e.name === "AbortError") return; }
+  }
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a"); a.href = url; a.download = nom; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 4000); flash("✅ Téléchargé");
+}
+function montrerMedia(bulle, media, blob){
+  if(media.kind === "document") return montrerDocument(bulle, media, blob);
+  const zone = bulle.querySelector(".txt"); zone.innerHTML = "";
+  const url = URL.createObjectURL(blob);
+  let el;
+  if(media.kind === "audio"){ el = document.createElement("audio"); el.controls = true; el.style.width = "100%"; el.src = url; }
+  else{ el = document.createElement("img"); el.className = "gen"; el.alt = media.prompt; el.src = url; }
+  const l = document.createElement("div"); l.textContent = (media.kind === "audio" ? "🎵 " : "🎨 ") + media.prompt; l.style.cssText = "font-size:13px;opacity:.85;margin-bottom:4px";
+  zone.append(l, el);
+  const ext = media.kind === "audio" ? "wav" : ((blob.type.split("/")[1] || "png").replace("jpeg","jpg"));
+  const nom = "knall-" + (media.kind === "audio" ? "musique" : "image") + "-" + media.id.slice(-5) + "." + ext;
+  const a = bulle.querySelector(".actions"); if(!a) return; a.innerHTML = "";
+  const mk = (t, f) => { const b = document.createElement("button"); b.className = "act-btn"; b.textContent = t; b.onclick = () => f(b); a.appendChild(b); };
+  mk(media.kind === "audio" ? "⬇️ Télécharger" : "💾 Enregistrer", b => sauverBlob(nom, blob, b, false));
+  mk("📤 Partager", b => sauverBlob(nom, blob, b, true));
+  mk("🔄 Refaire", () => media.kind === "audio" ? genererMusique(media.prompt) : genererImage(media.prompt));
+}
+function afficherMedia(m){
+  const b = afficherMsg(m.type, iconeMedia(m.media.kind) + m.media.prompt);
+  mediaGet(m.media.id).then(blob => { if(blob) montrerMedia(b, m.media, blob); else remplirMsg(b, iconeMedia(m.media.kind) + m.media.prompt + "\\n(fichier supprimé de cet appareil)"); });
+}
+function lierMedia(bulle, media, blob){
+  bulle.classList.remove("pending");
+  bulle.dataset.raw = (media.kind === "audio" ? "Musique : " : "Image : ") + media.prompt;
+  const v = threadActif().vues; v[v.length-1].texte = "[" + media.kind + "] " + media.prompt; v[v.length-1].media = media; sauverThreads();
+  montrerMedia(bulle, media, blob);
+}
+
+async function genererImage(prompt){
+  const bulle = ajouterMsg("ai", "🎨 " + prompt);
+  bulle.classList.add("pending");
+  bulle.querySelector(".txt").innerHTML = '<div class="typing"><span></span><span></span><span></span></div>';
+  const essai = async (p) => {
+    const ctl = new AbortController(), t = setTimeout(() => ctl.abort(), 90000);
+    try{
+      const url = PROXY_URL.replace(/\/$/,"") + "/image?prompt=" + encodeURIComponent(p) + "&t=" + Date.now();
+      const res = await fetch(url, { headers: { "x-knall-token": APP_TOKEN }, signal: ctl.signal });
+      if(!res.ok){ const d = await res.json().catch(()=>({})); throw new Error(d.error || ("Erreur " + res.status)); }
+      const blob = await res.blob();
+      if(!/^image\//.test(blob.type)) throw new Error("le serveur n'a pas renvoyé une image");
+      return blob;
+    }finally{ clearTimeout(t); }
+  };
+  try{
+    if(!PROXY_URL) throw new Error("serveur non configuré");
+    const finalP = await preparerPrompt(prompt);
+    let blob;
+    try{ blob = await essai(finalP); }
+    catch(e){ if(e.name === "AbortError" || /Failed to fetch|Erreur 5\\d\\d/.test(e.message)){ blob = await essai(finalP); } else throw e; } // 2e essai (serveur qui se réveille)
+    const media = {id:"i" + Date.now(), kind:"image", prompt};
+    await mediaSave(media.id, blob);
+    lierMedia(bulle, media, blob);
+  }catch(e){
+    bulle.classList.remove("pending");
+    remplirMsg(bulle, "Impossible de générer l'image : " + (e.name === "AbortError" ? "délai dépassé (le serveur dort peut-être, réessaie)" : e.message));
+    const v = threadActif().vues; v[v.length-1].texte = bulle.dataset.raw; sauverThreads();
+  }
+}
+
+/* ---- Musique 100% hors ligne (synthèse dans l'app, sans serveur) ---- */
+function styleMusique(p){
+  p = norm(p);
+  const has = (...m) => m.some(x => p.includes(x));
+  let st = {bpm:100, mineur:false, boite:"pop", nom:"pop"};
+  if(has("kompa","compas")) st = {bpm:118, mineur:false, boite:"kompa", nom:"kompa"};
+  else if(has("zouk")) st = {bpm:98, mineur:false, boite:"kompa", nom:"zouk"};
+  else if(has("rara")) st = {bpm:132, mineur:true, boite:"rara", nom:"rara"};
+  else if(has("rock","energi","dynamique","puissant")) st = {bpm:140, mineur:false, boite:"rock", nom:"rock"};
+  else if(has("rap","hip hop","hiphop","trap")) st = {bpm:90, mineur:true, boite:"hiphop", nom:"hip-hop"};
+  else if(has("gospel","louange","priye","priere","worship")) st = {bpm:78, mineur:false, boite:"calme", nom:"gospel"};
+  else if(has("calme","relax","doux","dous","lent","dormir","detente","sleep")) st = {bpm:72, mineur:false, boite:"calme", nom:"calme"};
+  if(has("triste","nostalg","melanc","tris","sombre","dark")) st.mineur = true;
+  if(has("joyeux","happy","fete","danse","dance","gai")) st.mineur = false;
+  if(has("rapide","vit","fast")) st.bpm += 20;
+  if(has("lent","slow")) st.bpm -= 15;
+  st.bpm = Math.max(60, Math.min(160, st.bpm));
+  return st;
+}
+function synthMusique(prompt, graine){
+  const sr = 22050, st = styleMusique(prompt);
+  let seed = 0; for(const c of prompt) seed = (seed * 31 + c.charCodeAt(0)) >>> 0; seed = (seed + graine * 7919) >>> 0;
+  const rnd = () => (seed = (seed * 1664525 + 1013904223) >>> 0) / 4294967296;
+  const pas = 60 / st.bpm / 4, mesure = pas * 16, NB = 16, N = Math.floor(sr * (mesure * NB + 1.5));
+  const buf = new Float32Array(N);
+  const gamme = st.mineur ? [0,2,3,5,7,8,10] : [0,2,4,5,7,9,11];
+  const prog = st.mineur ? [0,5,2,6] : [0,4,5,3];
+  const racine = 45 + Math.floor(rnd() * 7);
+  const midi = d => racine + gamme[((d % 7) + 7) % 7] + 12 * Math.floor(d / 7);
+  const fr = m => 440 * Math.pow(2, (m - 69) / 12);
+  const onde = (type, ph) => { ph -= Math.floor(ph); return type === 0 ? Math.sin(6.2832 * ph) : type === 1 ? 4 * Math.abs(ph - 0.5) - 1 : type === 2 ? 2 * ph - 1 : (ph < 0.5 ? 1 : -1); };
+  const note = (t0, dur, f, vol, type, atk, decay) => {
+    const i0 = Math.floor(t0 * sr), n = Math.min(Math.floor(dur * sr), N - i0);
+    for(let i = 0; i < n; i++){
+      const t = i / sr, env = Math.min(1, t / atk) * Math.exp(-t * decay) * Math.min(1, (dur - t) / 0.03);
+      buf[i0 + i] += onde(type, f * t) * vol * Math.max(0, env);
+    }
+  };
+  const kick = t0 => { const i0 = Math.floor(t0 * sr), n = Math.min(Math.floor(0.3 * sr), N - i0); let ph = 0;
+    for(let i = 0; i < n; i++){ const t = i / sr; ph += (45 + 90 * Math.exp(-t * 30)) / sr; buf[i0 + i] += Math.sin(6.2832 * ph) * Math.exp(-t * 11) * 0.9; } };
+  const bruit = (t0, dur, vol, decay, aigu) => { const i0 = Math.floor(t0 * sr), n = Math.min(Math.floor(dur * sr), N - i0); let prev = 0;
+    for(let i = 0; i < n; i++){ const b = rnd() * 2 - 1, x = aigu ? b - prev : b; prev = b; buf[i0 + i] += x * vol * Math.exp(-(i / sr) * decay); } };
+  const BOITES = {
+    kompa: {k:[0,8], s:[4,12], h:[0,2,4,6,8,10,12,14], b:[0,6,8,14]},
+    rara:  {k:[0,4,8,12], s:[4,12], h:[0,2,4,6,8,10,12,14], b:[0,4,8,12]},
+    rock:  {k:[0,8,10], s:[4,12], h:[0,2,4,6,8,10,12,14], b:[0,2,4,6,8,10,12,14]},
+    hiphop:{k:[0,7,10], s:[4,12], h:[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15], b:[0,10]},
+    calme: {k:[0], s:[], h:[], b:[0,8]},
+    pop:   {k:[0,8], s:[4,12], h:[0,2,4,6,8,10,12,14], b:[0,8]}
+  };
+  const bt = BOITES[st.boite];
+  for(let m = 0; m < NB; m++){
+    const t0 = m * mesure, deg = prog[m % 4];
+    [0,2,4].forEach(k => note(t0, mesure * 0.98, fr(midi(deg + k) + 12), 0.09, 1, 0.08, 0.15)); // accords
+    bt.b.forEach((sp, j) => note(t0 + sp * pas, pas * 2.2, fr(midi(deg) - 12 + (j % 2 && st.boite === "kompa" ? 7 : 0)), 0.32, 1, 0.005, 3)); // basse
+    bt.k.forEach(sp => kick(t0 + sp * pas));
+    bt.s.forEach(sp => { bruit(t0 + sp * pas, 0.18, 0.28, 24, false); note(t0 + sp * pas, 0.12, 190, 0.15, 0, 0.002, 30); });
+    bt.h.forEach(sp => bruit(t0 + sp * pas, 0.05, 0.10, 90, true));
+    if(m >= 2){ // melodie : marche aleatoire sur la gamme (les temps forts tombent sur l'accord)
+      let d = 7 + deg + [0,2,4][Math.floor(rnd() * 3)];
+      for(let sp = 0; sp < 16; sp += 2){
+        if(rnd() < 0.72){
+          d += Math.floor(rnd() * 5) - 2; if(d < 7) d = 7; if(d > 15) d = 15;
+          if(sp % 8 === 0) d = 7 + deg + [0,2,4][Math.floor(rnd() * 3)];
+          note(t0 + sp * pas, pas * (rnd() < 0.4 ? 4 : 2) * 0.95, fr(midi(d) + 12), 0.14, 3, 0.01, 4);
+        }
+      }
+    }
+  }
+  const fin = Math.floor(sr * 1.5); let pic = 0;
+  for(let i = 0; i < N; i++){ if(i > N - fin) buf[i] *= (N - i) / fin; pic = Math.max(pic, Math.abs(buf[i])); }
+  const g = pic > 0 ? 0.9 / pic : 1; for(let i = 0; i < N; i++) buf[i] *= g;
+  return {buf, sr, st};
+}
+function wavOctets(f32, sr){
+  const n = f32.length, o = new DataView(new ArrayBuffer(44 + n * 2));
+  const w = (a, t) => { for(let i = 0; i < t.length; i++) o.setUint8(a + i, t.charCodeAt(i)); };
+  w(0, "RIFF"); o.setUint32(4, 36 + n * 2, true); w(8, "WAVEfmt "); o.setUint32(16, 16, true); o.setUint16(20, 1, true); o.setUint16(22, 1, true);
+  o.setUint32(24, sr, true); o.setUint32(28, sr * 2, true); o.setUint16(32, 2, true); o.setUint16(34, 16, true); w(36, "data"); o.setUint32(40, n * 2, true);
+  for(let i = 0; i < n; i++) o.setInt16(44 + i * 2, Math.max(-1, Math.min(1, f32[i])) * 32767, true);
+  return o.buffer;
+}
+let _graine = 0;
+async function genererMusique(prompt){
+  const bulle = ajouterMsg("ai", "🎵 " + prompt);
+  bulle.classList.add("pending");
+  bulle.querySelector(".txt").innerHTML = '<div class="typing"><span></span><span></span><span></span></div>';
+  await new Promise(r => setTimeout(r, 60)); // laisse l'ecran afficher l'animation
+  try{
+    const r = synthMusique(prompt || "musique", ++_graine);
+    const blob = new Blob([wavOctets(r.buf, r.sr)], {type:"audio/wav"});
+    const media = {id:"a" + Date.now(), kind:"audio", prompt: prompt + " (" + r.st.nom + ", " + r.st.bpm + " bpm)"};
+    await mediaSave(media.id, blob);
+    lierMedia(bulle, media, blob);
+  }catch(e){
+    bulle.classList.remove("pending");
+    remplirMsg(bulle, "Impossible de créer la musique : " + e.message);
+  }
+}
+
+/* ---- Documents (Excel, Word, PDF, CSV, code...) créés par le serveur ---- */
+const iconeMedia = k => k === "audio" ? "🎵 " : k === "document" ? "📄 " : "🎨 ";
+const DOC_VERBE = "(?:fe|fais|faire|fabrique|fabriquer|cree|creer|creez|kreye|genere|generer|generez|prepare|preparer|redige|rediger|ecris|ecrire|produis|produire|voye|envoi|envoie|envoyer|donne|donner|bay|convertis|convertir|konverti|transforme|transformer|exporte|exporter|ekspote|make|create|generate|send|write|convert|export)\\b";
+const DOC_DEBUT = "^(?:(?:s'il (?:te|vous) plait|tanpri|svp|stp|please)\\s+)?" + DOC_VERBE + "(?:[\\s-]+(?:moi|mwen|m|nou|me|us))?\\s+(?:[\\w'’-]+\\s+){0,4}?";
+const DOC_FORT = new RegExp(DOC_DEBUT + "(?:pdf|word|docx|excel|xlsx|xls|csv|tableur|spreadsheet)\\b");
+const DOC_GENERIQUE = new RegExp(DOC_DEBUT.replace("(?:[\\w'’-]+\\s+){0,4}?", "(?:(?!(?:ce|cet|cette|ces|mon|ma|mes|ton|ta|tes|son|sa|ses)\\s)[\\w'’-]+\\s+){0,4}?") + "(?:documents?|dokiman)\\b");
+const DOC_LABEL = {xlsx:"Excel", docx:"Word", pdf:"PDF", csv:"CSV", txt:"Texte", md:"Markdown", html:"HTML", json:"JSON"};
+const DOC_TEXTE = /^(txt|md|csv|tsv|json|xml|html|htm|css|js|ts|jsx|py|java|php|sql|sh|bat|c|cpp|cs|go|rs|kt|swift|rb|yml|yaml|ini|log|svg|ics|vcf|srt|tex)$/;
+function demandeDocument(brut){
+  const n = norm(brut);
+  return DOC_FORT.test(n) || (agentActif !== "code" && !brut.includes("--- ") && DOC_GENERIQUE.test(n));
+}
+function tailleLisible(n){ return n < 1024 ? n + " o" : n < 1048576 ? Math.round(n / 1024) + " Ko" : (n / 1048576).toFixed(1) + " Mo"; }
+
+function carteTravail(zone){
+  zone.innerHTML = "";
+  const c = document.createElement("div"); c.className = "doc-card work";
+  c.innerHTML = '<div class="doc-top"><div class="doc-ico">···</div><div><div class="doc-nom">Création du document…</div>' +
+    '<div class="doc-meta">Knall prépare ton fichier</div></div></div>' +
+    '<ul class="doc-steps"><li class="on">Analyse de la demande</li><li>Écriture du contenu</li><li>Construction du fichier</li></ul>' +
+    '<div class="doc-bar"><i></i></div>';
+  zone.appendChild(c);
+  const li = c.querySelectorAll(".doc-steps li");
+  return i => li.forEach((x, k) => { x.className = k < i ? "ok" : k === i ? "on" : ""; });
+}
+
+function montrerDocument(bulle, media, blob){
+  const zone = bulle.querySelector(".txt"); zone.innerHTML = "";
+  const ext = String(media.ext || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+  const c = document.createElement("div"); c.className = "doc-card";
+  const top = document.createElement("div"); top.className = "doc-top";
+  const ico = document.createElement("div"); ico.className = "doc-ico t-" + ext; ico.textContent = ext.toUpperCase().slice(0, 4);
+  const inf = document.createElement("div");
+  const nom = document.createElement("div"); nom.className = "doc-nom"; nom.textContent = media.nom;
+  const meta = document.createElement("div"); meta.className = "doc-meta"; meta.textContent = (DOC_LABEL[ext] || ext.toUpperCase()) + " · " + tailleLisible(media.taille || blob.size);
+  inf.append(nom, meta); top.append(ico, inf); c.appendChild(top);
+  if(media.resume){ const r = document.createElement("div"); r.className = "doc-resume"; r.textContent = media.resume; c.appendChild(r); }
+  const b = document.createElement("div"); b.className = "btns";
+  const mk = (t, f) => { const x = document.createElement("button"); x.className = "act-btn"; x.textContent = t; x.onclick = () => f(x); b.appendChild(x); };
+  const lire = async () => (await blob.text()).replace(/^\uFEFF/, "");
+  if(DOC_TEXTE.test(ext)) mk("👁️ Voir", async () => ouvrirViewer(media.nom, await lire()));
+  if(ext === "html" || ext === "htm") mk("▶️ Aperçu", async () => ouvrirApercu({nom: media.nom, ext: "html", v: await lire()}, []));
+  mk("⬇️ Télécharger", x => sauverBlob(media.nom, blob, x, false));
+  mk("📤 Partager", x => sauverBlob(media.nom, blob, x, true));
+  c.appendChild(b); zone.appendChild(c);
+  const a = bulle.querySelector(".actions"); if(a) a.remove();
+  chat.scrollTop = chat.scrollHeight;
+}
+
+let _dernierDoc = null; // dernière fiche : permet « ajoute une colonne », « mets-le en PDF »
+async function creerDocument(demande){
+  const agent = agentActif;
+  const bulle = ajouterMsg("ai", "📄 …");
+  const a0 = bulle.querySelector(".actions"); if(a0) a0.remove();
+  const etape = carteTravail(bulle.querySelector(".txt"));
+  const t1 = setTimeout(() => etape(1), 1800);
+  const precedent = _dernierDoc && Date.now() - _dernierDoc.t < 15 * 60 * 1000 ? {demande: _dernierDoc.demande, fiche: _dernierDoc.fiche} : null;
+  const essai = async () => {
+    const ctl = new AbortController(), t = setTimeout(() => ctl.abort(), 120000);
+    try{
+      const res = await fetch(PROXY_URL.replace(/\/$/, "") + "/document", {
+        method: "POST", signal: ctl.signal,
+        headers: {"Content-Type": "application/json", "x-knall-token": APP_TOKEN},
+        body: JSON.stringify({agent, demande, contexte: (hist[agent] || []).slice(-4), precedent})
+      });
+      const d = await res.json().catch(() => ({}));
+      if(!res.ok) throw new Error(d.error || ("Erreur " + res.status));
+      return d;
+    }finally{ clearTimeout(t); }
+  };
+  try{
+    if(!PROXY_URL) throw new Error("serveur non configuré");
+    let d;
+    try{ d = await essai(); }
+    catch(e){ if(/Failed to fetch/.test(e.message)) d = await essai(); else throw e; } // 2e essai : serveur qui se réveille
+    clearTimeout(t1); etape(2);
+    const bin = atob(d.base64), u8 = new Uint8Array(bin.length);
+    for(let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
+    const blob = new Blob([u8], {type: d.mime});
+    const media = {id: "d" + Date.now(), kind: "document", prompt: d.nom, nom: d.nom, ext: d.ext, taille: d.taille, resume: d.resume || ""};
+    await mediaSave(media.id, blob);
+    bulle.dataset.raw = "Document : " + d.nom;
+    const v = threadActif().vues; v[v.length-1].texte = "[document] " + d.nom; v[v.length-1].media = media; sauverThreads();
+    await new Promise(r => setTimeout(r, 350));
+    montrerDocument(bulle, media, blob);
+    _dernierDoc = d.fiche ? {demande: demande.slice(0, 2000), fiche: d.fiche, t: Date.now()} : null;
+    memoriser(agent, demande, "📄 Document créé : " + d.nom + (d.resume ? " — " + d.resume : ""));
+  }catch(e){
+    clearTimeout(t1);
+    remplirMsg(bulle, "Impossible de créer le document : " + (e.name === "AbortError" ? "délai dépassé (le serveur dort peut-être, réessaie)" : e.message));
+    const v = threadActif().vues; v[v.length-1].texte = bulle.dataset.raw; sauverThreads();
+  }
+  chat.scrollTop = chat.scrollHeight;
+}
+
+/* ---- Chat ---- */
+const chat=document.getElementById('chat'), input=document.getElementById('msgInput');
+async function copierTexte(texte, btn){
+  let ok = false;
+  try{ await navigator.clipboard.writeText(texte); ok = true; }catch(e){}
+  if(!ok){
+    try{
+      const t = document.createElement('textarea'); t.value = texte; t.style.position = 'fixed'; t.style.opacity = '0';
+      document.body.appendChild(t); t.select(); ok = document.execCommand('copy'); t.remove();
+    }catch(e){}
+  }
+  if(btn){ const old = btn.textContent; btn.textContent = ok ? "✅ Copié" : "❌ Échec"; setTimeout(() => btn.textContent = old, 1400); }
+}
+function textePropre(raw){ // texte lisible partout (QuickEdit, WhatsApp…) : plus de ``` ni de **
+  const net = t => t.replace(/\*\*/g, "").replace(/`/g, "").replace(/^\s*#{1,4}\s+/gm, "").replace(/^(\s*)[-*]\s+/gm, "$1• ");
+  return extraireCode(raw).map(sg => sg.t === "texte" ? net(sg.v).trim()
+    : "──── " + sg.nom + " ────\n" + sg.v + "\n──────────").join("\n\n").replace(/\r/g, "");
+}
+async function partagerTexte(texte, btn){
+  texte = textePropre(texte);
+  if(navigator.share){ try{ await navigator.share({text: texte}); return; }catch(e){ if(e && e.name === "AbortError") return; } }
+  copierTexte(texte, btn); // pas de partage natif : on copie
+}
+/* ---- Code sous forme de fichiers (agent Code) ---- */
+const EXT = {html:"html",htm:"html",javascript:"js",js:"js",jsx:"jsx",typescript:"ts",ts:"ts",json:"json",css:"css",python:"py",py:"py",php:"php",java:"java",sql:"sql",bash:"sh",sh:"sh",xml:"xml",markdown:"md",md:"md",kotlin:"kt",c:"c",cpp:"cpp",csharp:"cs",yaml:"yml",yml:"yml",text:"txt",txt:"txt"};
+const MIMES = {html:"text/html", json:"application/json", css:"text/css", js:"text/javascript", xml:"application/xml", md:"text/markdown"};
+function extraireCode(texte){
+  if(((texte.match(/```/g) || []).length) % 2 === 1) texte += "\n```"; // reponse coupee : on ferme le bloc
+  const segs = [], re = /```([^\n`]*)\n([\s\S]*?)```/g;
+  let dernier = 0, m, n = 0;
+  while((m = re.exec(texte))){
+    let avant = texte.slice(dernier, m.index);
+    const parts = m[1].trim().split(/\s+/).filter(Boolean);
+    const langue = (parts[0] || "").toLowerCase();
+    let nom = parts.find(x => /^[\w.-]+\.[a-z0-9]+$/i.test(x));
+    if(!nom){ // titre juste avant le bloc : **index.html**
+      const ls = avant.replace(/\s+$/, "").split("\n"), der = (ls[ls.length-1] || "").replace(/[*`#:_\s]/g, "");
+      if(/^[\w.-]+\.[a-z0-9]{1,5}$/i.test(der)){ nom = der; ls.pop(); avant = ls.join("\n"); }
+    }
+    if(avant.trim()) segs.push({t:"texte", v:avant});
+    n++;
+    const ext = nom ? nom.split(".").pop().toLowerCase() : (EXT[langue] || "txt");
+    if(!nom) nom = "knall-code-" + n + "." + ext;
+    segs.push({t:"code", nom, ext, v:m[2].replace(/\n$/, "")});
+    dernier = re.lastIndex;
+  }
+  if(dernier < texte.length) segs.push({t:"texte", v:texte.slice(dernier)});
+  return segs;
+}
+async function telechargerFichier(nom, contenu, btn){
+  const flash = t => { if(btn){ const o = btn.textContent; btn.textContent = t; setTimeout(() => btn.textContent = o, 1600); } };
+  const P = window.Capacitor && window.Capacitor.Plugins;
+  if(P && P.Filesystem && P.Share){ // app Android : on écrit le fichier puis on ouvre le choix "Ouvrir avec…"
+    try{
+      const r = await P.Filesystem.writeFile({path:nom, data:contenu, directory:"CACHE", encoding:"utf8"});
+      await P.Share.share({title:nom, url:r.uri, dialogTitle:"Ouvrir avec…"});
+      return;
+    }catch(e){ if(e && /cancel/i.test(e.message || "")) return; }
+  }
+  try{ // navigateur : téléchargement classique
+    const blob = new Blob([contenu], {type: MIMES[nom.split(".").pop().toLowerCase()] || "text/plain"});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a"); a.href = url; a.download = nom;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 4000);
+    flash("✅ Téléchargé");
+  }catch(e){ copierTexte(contenu, btn); }
+}
+function ouvrirViewer(nom, contenu){
+  $("viewerNom").textContent = nom;
+  const zone = $("viewerCode"); zone.textContent = "";
+  const frag = document.createDocumentFragment();
+  contenu.split("\n").forEach((l, i) => {
+    const d = document.createElement("div"); d.className = "ligne";
+    const a = document.createElement("span"); a.className = "num"; a.textContent = i + 1;
+    const b = document.createElement("span"); b.className = "cod"; b.textContent = l || " ";
+    d.append(a, b); frag.appendChild(d);
+  });
+  zone.appendChild(frag); zone.scrollTop = 0;
+  $("viewerCopy").onclick = () => copierTexte(contenu, $("viewerCopy"));
+  $("viewerDl").onclick = () => telechargerFichier(nom, contenu, $("viewerDl"));
+  $("viewerClose").onclick = () => $("viewer").classList.remove("open");
+  $("viewer").classList.add("open");
+}
+/* ---- Aperçu visuel d'une app HTML (css/js des autres blocs du message intégrés) ---- */
+function assemblerApp(seg, tous){
+  const base = x => x.split("/").pop().toLowerCase();
+  const csss = tous.filter(x => x.ext === "css"), jss = tous.filter(x => x.ext === "js");
+  const utilises = new Set();
+  const prendre = (liste, ref) => {
+    let f = liste.find(x => base(x.nom) === base(ref));
+    if(!f) f = liste.find(x => !utilises.has(x));
+    if(f) utilises.add(f); return f;
+  };
+  let h = seg.v;
+  h = h.replace(/<link\b[^>]*href=["']([^"']+\.css)["'][^>]*>/gi, (mm, ref) => {
+    const f = prendre(csss, ref); return f ? "<style>\n" + f.v + "\n</style>" : mm;
+  });
+  h = h.replace(/<script\b[^>]*src=["']([^"']+\.js)["'][^>]*>\s*<\/script>/gi, (mm, ref) => {
+    const f = prendre(jss, ref); return f ? "<script>\n" + f.v.replace(/<\/script/gi, "<\\/script") + "\n<\/script>" : mm;
+  });
+  csss.concat(jss).forEach(f => { // css/js sans balise dans le html : on les ajoute
+    if(utilises.has(f)) return;
+    const bloc = f.ext === "css" ? "<style>\n" + f.v + "\n</style>" : "<script>\n" + f.v.replace(/<\/script/gi, "<\\/script") + "\n<\/script>";
+    h = /<\/body>/i.test(h) ? h.replace(/<\/body>/i, bloc + "\n</body>") : h + "\n" + bloc;
+  });
+  if(!/<meta[^>]+viewport/i.test(h)) h = h.replace(/<head[^>]*>/i, m => m + '<meta name="viewport" content="width=device-width, initial-scale=1">');
+  return h;
+}
+function ouvrirApercu(seg, tous){
+  const html = assemblerApp(seg, tous);
+  $("apercuNom").textContent = "▶️ " + seg.nom;
+  const fr = $("apercuFrame"); fr.srcdoc = html;
+  const nomApp = seg.nom.replace(/\.html?$/i, "") + "-app.html";
+  $("apercuReload").onclick = () => { fr.srcdoc = ""; setTimeout(() => fr.srcdoc = html, 30); };
+  $("apercuDl").onclick = () => telechargerFichier(nomApp, html, $("apercuDl"));
+  $("apercuShare").onclick = async () => {
+    try{
+      const f = new File([html], nomApp, {type:"text/html"});
+      if(navigator.canShare && navigator.canShare({files:[f]})){ await navigator.share({files:[f], title:nomApp}); return; }
+    }catch(e){ if(e && e.name === "AbortError") return; }
+    telechargerFichier(nomApp, html, $("apercuShare"));
+  };
+  $("apercuClose").onclick = () => { $("apercu").classList.remove("open"); fr.srcdoc = ""; };
+  $("apercu").classList.add("open");
+}
+function carteFichier(seg, tous){
+  const c = document.createElement("div"); c.className = "fichier";
+  const n = document.createElement("div"); n.className = "nom"; n.textContent = "📄 " + seg.nom;
+  const nb = seg.v.split("\n").length;
+  const m = document.createElement("div"); m.className = "meta"; m.textContent = nb + " ligne" + (nb > 1 ? "s" : "") + " · " + seg.ext.toUpperCase();
+  const b = document.createElement("div"); b.className = "btns";
+  const voir = document.createElement("button"); voir.className = "act-btn"; voir.textContent = "👁️ Voir";
+  const dl = document.createElement("button"); dl.className = "act-btn"; dl.textContent = "⬇️ Télécharger";
+  voir.onclick = () => ouvrirViewer(seg.nom, seg.v);
+  dl.onclick = () => telechargerFichier(seg.nom, seg.v, dl);
+  if(seg.ext === "html" || seg.ext === "htm"){
+    const ap = document.createElement("button"); ap.className = "act-btn"; ap.textContent = "▶️ Aperçu";
+    ap.onclick = () => ouvrirApercu(seg, tous || [seg]);
+    b.append(ap);
+  }
+  b.append(voir, dl); c.append(n, m, b);
+  return c;
+}
+/* ---- Rendu Markdown minimal (gras, titres, tableaux, listes) — 100% hors ligne ---- */
+function escHtml(s){ return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+function estImageUrl(url){ return /\.(png|jpe?g|gif|webp|svg)(\?[^\s]*)?$/i.test(url); }
+function cadreImage(q, url){
+  const a = s => String(s||"").replace(/"/g, "&quot;");
+  return '<div class="img-frame" data-q="'+a(q)+'" data-u="'+a(url)+'"><div class="img-load">🔍 Recherche de l\'image…</div></div>';
+}
+function lienHtml(url, texte){
+  const safe = url.replace(/"/g, "%22");
+  if(estImageUrl(url)) return cadreImage("", url);
+  return '<a href="'+safe+'" target="_blank" rel="noopener noreferrer">'+(texte||url)+'</a>';
+}
+function inlineMd(s){
+  s = escHtml(s);
+  const cadres = [];   // les cadres d'image sont mis de côté pour ne pas être re-transformés en liens
+  const garde = html => "\uE010" + (cadres.push(html) - 1) + "\uE011";
+  s = s.replace(/\[\[\s*IMG\s*:\s*([^\]]+?)\s*\]\]/gi, (m, q) => garde(cadreImage(q, "")));
+  s = s.replace(/!\[([^\]]*)\]\((https?:\/\/[^\s)]+)\)/g, (m, alt, url) => garde(cadreImage(alt, url)));
+  s = s.replace(/`([^`]+)`/g, '<code>$1</code>');
+  s = s.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+  s = s.replace(/`/g, "");  // backtick isole (reponse coupee)
+  s = s.replace(/(^|[^*\w])\*(?=[^\s*])([^*\n]*[^\s*])\*(?!\*)/g, '$1<em>$2</em>');
+  s = s.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)|(https?:\/\/[^\s<]+[^\s<.,;:!?)])/g,
+    (m, txt, url1, url2) => { const u = url1 || url2; return estImageUrl(u) ? garde(cadreImage("", u)) : lienHtml(u, txt); });
+  return s.replace(/\uE010(\d+)\uE011/g, (m, n) => cadres[+n]);
+}
+function ligneTable(l){
+  let c = l.trim(); if(c.startsWith("|")) c = c.slice(1); if(c.endsWith("|")) c = c.slice(0,-1);
+  return c.split("|").map(x => x.trim());
+}
+/* ---- Formules mathématiques (KaTeX) : \[ .. \]  \( .. \)  $$ .. $$  $ .. $ ---- */
+function texLisible(t){
+  let s = t, avant;
+  do{ avant = s; s = s.replace(/\\[dt]?frac\{([^{}]*)\}\{([^{}]*)\}/g, "($1)/($2)").replace(/\\sqrt\{([^{}]*)\}/g, "√($1)"); }while(s !== avant);
+  return s.replace(/\\times/g,"×").replace(/\\cdot/g,"·").replace(/\\div/g,"÷").replace(/\\(?:le|leq)\b/g,"≤").replace(/\\(?:ge|geq)\b/g,"≥")
+    .replace(/\\neq?\b/g,"≠").replace(/\\pi\b/g,"π").replace(/\\(?:left|right)/g,"").replace(/\\cancel\{([^{}]*)\}/g,"$1")
+    .replace(/\{,\}/g,",").replace(/\\[,;! ]/g," ").replace(/[{}]/g,"");
+}
+function katexHtml(tex, display){
+  try{ if(window.katex) return katex.renderToString(tex, {displayMode: display, throwOnError: false, strict: false, trust: false}); }catch(e){}
+  return "<code>" + escHtml(texLisible(tex)) + "</code>";   // hors connexion : version lisible sans KaTeX
+}
+function extraireMaths(t){
+  const rendus = [];
+  const garde = (tex, aff) => { rendus.push(katexHtml(tex.trim(), aff)); return "\uE000" + (aff ? "D" : "I") + (rendus.length - 1) + "\uE001"; };
+  const parts = t.split(/(```[\s\S]*?```|`[^`\n]*`)/);   // jamais de maths dans le code
+  const out = parts.map((p, i) => i % 2 ? p : p
+    .replace(/\\\[([\s\S]+?)\\\]/g, (_, m) => garde(m, true))
+    .replace(/\$\$([\s\S]+?)\$\$/g, (_, m) => garde(m, true))
+    .replace(/\\\(([\s\S]+?)\\\)/g, (_, m) => garde(m, false))
+    .replace(/(^|[^\\$\w])\$([^\s$](?:[^$\n]*?[^\s$])?)\$(?![\w$])/g, (all, pre, m) => /[\\^_=]/.test(m) ? pre + garde(m, false) : all)
+  ).join("");
+  return {texte: out, rendus};
+}
+function renduMarkdown(texte){
+  const M = extraireMaths(texte);
+  return renduMarkdownBrut(M.texte)
+    .replace(/<p>(\uE000D\d+\uE001)<\/p>/g, "$1")
+    .replace(/\uE000([DI])(\d+)\uE001/g, (_, k, n) => k === "D" ? '<span class="kdisp">' + M.rendus[+n] + '</span>' : M.rendus[+n]);
+}
+
+function renduMarkdownBrut(texte){
+  const lignes = texte.replace(/\r\n/g,"\n").split("\n");
+  let html = "", i = 0;
+  while(i < lignes.length){
+    const l = lignes[i];
+    if(l.trim() === ""){ i++; continue; }
+    // tableau : ligne d'en-tete + ligne de separation ---|---
+    if(/^\s*\|.*\|\s*$/.test(l) && lignes[i+1] && /^\s*\|?\s*:?-{2,}:?\s*(\|\s*:?-{2,}:?\s*)*\|?\s*$/.test(lignes[i+1])){
+      const ent = ligneTable(l); i += 2;
+      const corps = [];
+      while(i < lignes.length && /^\s*\|.*\|\s*$/.test(lignes[i])){ corps.push(ligneTable(lignes[i])); i++; }
+      html += '<div class="tbl-wrap"><table><thead><tr>' + ent.map(h => "<th>"+inlineMd(h)+"</th>").join("") +
+        "</tr></thead><tbody>" + corps.map(r => "<tr>"+r.map(c => "<td>"+inlineMd(c||"")+"</td>").join("")+"</tr>").join("") +
+        "</tbody></table></div>";
+      continue;
+    }
+    // titres
+    const hm = l.match(/^(#{1,4})\s+(.*)/);
+    if(hm){ const n = hm[1].length + 2; html += "<h"+n+">"+inlineMd(hm[2])+"</h"+n+">"; i++; continue; }
+    // listes
+    if(/^\s*[-*•]\s+/.test(l) || /^\s*\d+[.)]\s+/.test(l)){
+      const ord = /^\s*\d+[.)]\s+/.test(l), items = [], num = ord ? parseInt(l.match(/^\s*(\d+)/)[1], 10) : 1;
+      while(i < lignes.length && (/^\s*[-*•]\s+/.test(lignes[i]) || /^\s*\d+[.)]\s+/.test(lignes[i]))){
+        items.push(lignes[i].replace(/^\s*(?:[-*•]|\d+[.)])\s+/, "")); i++;
+      }
+      const tag = ord ? "ol" : "ul";
+      html += "<"+tag+(ord && num > 1 ? ' start="'+num+'"' : "")+">" + items.map(it => "<li>"+inlineMd(it)+"</li>").join("") + "</"+tag+">";
+      continue;
+    }
+    // paragraphe (accumule les lignes simples qui se suivent)
+    const para = [l]; i++;
+    while(i < lignes.length && lignes[i].trim() !== "" && !/^\s*\|/.test(lignes[i]) && !/^#{1,4}\s/.test(lignes[i]) &&
+          !/^\s*[-*•]\s+/.test(lignes[i]) && !/^\s*\d+[.)]\s+/.test(lignes[i])){
+      para.push(lignes[i]); i++;
+    }
+    html += "<p>" + para.map(inlineMd).join("<br>") + "</p>";
+  }
+  return html;
+}
+
+/* ---- Images dans les réponses : on teste l'image, sinon on en cherche une autre (serveur /photos) ---- */
+const _cachePhotos = new Map();
+function testerImage(url){
+  return new Promise(ok => {
+    const im = new Image(); let fini = false;
+    const fin = v => { if(!fini){ fini = true; ok(v); } };
+    im.onload = () => fin(im.naturalWidth >= 80 && im.naturalHeight >= 60);
+    im.onerror = () => fin(false);
+    setTimeout(() => fin(false), 15000);
+    im.referrerPolicy = "no-referrer";
+    im.src = url;
+  });
+}
+async function chercherPhotosServeur(q){
+  if(_cachePhotos.has(q)) return _cachePhotos.get(q);
+  let liste = [];
+  try{
+    const r = await fetch(PROXY_URL.replace(/\/$/, "") + "/photos?q=" + encodeURIComponent(q) + "&n=6", {headers:{"x-knall-token": APP_TOKEN}});
+    const d = await r.json().catch(() => ({}));
+    liste = (d.photos || []).map(p => p.url);
+  }catch(e){}
+  if(liste.length) _cachePhotos.set(q, liste);
+  return liste;
+}
+async function telechargerImageUrl(url, btn){
+  try{
+    const r = await fetch(url); const b = await r.blob();
+    const a = document.createElement("a"); a.href = URL.createObjectURL(b);
+    a.download = "knall-image-" + Date.now().toString().slice(-5) + "." + ((b.type.split("/")[1] || "jpg").replace("jpeg","jpg").replace("svg+xml","svg"));
+    document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+  }catch(e){ window.open(url, "_blank", "noopener"); }
+}
+async function resoudreImage(fr){
+  if(fr.dataset.fait) return; fr.dataset.fait = "1";
+  const q = (fr.dataset.q || "").trim(), u0 = fr.dataset.u || "";
+  const essayes = new Set(); let file = u0 ? [u0] : [], serveurFait = false, courante = null;
+  async function suivante(){
+    for(;;){
+      if(!file.length){
+        if(serveurFait || !q) return null;
+        serveurFait = true;
+        file = (await chercherPhotosServeur(q)).filter(u => !essayes.has(u));
+        if(!file.length) return null;
+      }
+      const u = file.shift(); essayes.add(u);
+      if(await testerImage(u)) return u;
+    }
+  }
+  function afficher(url){
+    courante = url; fr.innerHTML = "";
+    const img = document.createElement("img"); img.alt = q || "image"; img.src = url; img.referrerPolicy = "no-referrer";
+    const bar = document.createElement("div"); bar.className = "img-bar";
+    const dl = document.createElement("button"); dl.textContent = "⬇ Télécharger"; dl.onclick = () => telechargerImageUrl(courante, dl);
+    bar.append(dl);
+    if(q){
+      const autre = document.createElement("button"); autre.textContent = "🔄 Autre image";
+      autre.onclick = async () => {
+        autre.disabled = true; autre.textContent = "…";
+        const u = await suivante();
+        if(u){ afficher(u); } else { autre.textContent = "Plus d'autre image"; }
+      };
+      bar.append(autre);
+    }
+    fr.append(img, bar);
+  }
+  const u = await suivante();
+  if(u) afficher(u);
+  else fr.innerHTML = '<div class="img-load">Aucune image trouvée' + (q ? ' pour « ' + escHtml(q) + ' »' : '') + '.</div>';
+}
+function resoudreImages(racine){ racine.querySelectorAll(".img-frame[data-q]:not([data-fait])").forEach(fr => { resoudreImage(fr); }); }
+
+function remplirMsg(d, texte){
+  d.dataset.raw = texte;
+  const s = d.querySelector(".txt"); s.textContent = ""; s.innerHTML = "";
+  if(d.classList.contains("ai") && texte.includes("```")){
+    const tousSegs = extraireCode(texte), segsCode = tousSegs.filter(x => x.t === "code");
+    tousSegs.forEach(seg => {
+      if(seg.t === "texte"){
+        const v = seg.v.trim();
+        if(v){ const div = document.createElement("div"); div.className = "md"; div.innerHTML = renduMarkdown(v); s.appendChild(div); resoudreImages(div); }
+      }else s.appendChild(carteFichier(seg, segsCode));
+    });
+  }else if(d.classList.contains("ai")){
+    s.innerHTML = renduMarkdown(texte);
+    s.className = "txt md";
+    resoudreImages(s);
+  }else{
+    s.textContent = texte;
+  }
+}
+
+/* ================= 🔊 ÉCOUTER — lecture vocale (français / anglais / kreyòl) ================= */
+/* Le téléphone n'a pas de voix créole. On lit donc le kreyòl avec une voix FRANÇAISE,
+   après avoir « réécrit » chaque mot comme le français le prononcera correctement.
+   Pour corriger une prononciation : ajoute une ligne dans MOTS_KREYOL (mots exacts)
+   ou dans REGLES_KREYOL (règles générales). */
+
+// 1) Mots exacts (priorité maximale) : kreyòl -> écriture « française » qui se prononce pareil
+const MOTS_KREYOL = {
+  "mwen":"mouin", "renmen":"rinmin", "m":"m", "ou":"ou", "li":"li", "nou":"nou", "yo":"yo", "se":"sé", "sa":"sa",
+  "ki":"ki", "nan":"nan", "pou":"pou", "gen":"guin", "men":"min", "te":"té",
+  "ap":"ap", "pral":"pral", "pa":"pa", "ak":"ak", "tout":"tou", "kounye":"kounyé", "a":"a",
+  "mèsi":"mèssi", "tanpri":"tan pri", "paske":"passké", "bay":"baï", "kay":"kaï", "lakay":"lakaï",
+  "ayiti":"aïti", "ayisyen":"aïsyin", "ayisyèn":"aïsyèn", "kreyòl":"kréyol", "kreyol":"kréyol",
+  "eske":"èsk", "moun":"moun", "bonjou":"bonjou", "bonswa":"bonsoir", "wi":"oui", "non":"non",
+  "pwoblèm":"proublèm", "dokiman":"dokiman", "telefòn":"télèfon", "entènèt":"intèrnèt",
+  "sèvè":"sèrvèr", "kòd":"kod", "fè":"fè", "vle":"vlé", "kapab":"kapab", "dwe":"dwé",
+  "lè":"lè", "tankou":"tan kou", "poukisa":"poukissa", "kisa":"kissa", "kijan":"ki jan",
+  "anpil":"anpil", "byen":"bien", "pi":"pi", "toujou":"toujou", "jodi":"jodi", "demen":"démin",
+  "yè":"yèr", "isit":"issit", "la":"la", "tèt":"tèt", "bagay":"bagaï", "youn":"youn"
+};
+
+// 2) Règles générales (appliquées dans l'ordre, sur un mot en minuscules)
+const REGLES_KREYOL = [
+  [/ay/g, "aï"], [/ey/g, "èï"], [/oy/g, "oï"],                       // ay, ey, oy : le y se prononce
+  [/enn/g, "ène"], [/onn/g, "one"], [/ann/g, "ane"], [/ounn/g, "oune"], // « nn » = voyelle orale + n
+  [/en(?![aeiouyèòéànm])/g, "in"],                                    // en nasal = [ɛ̃] → « in »
+  [/w(?=[aeiouèòé])/g, "ou"], [/w/g, "ou"],                           // w = ou (wa, wè, wi, aw...)
+  [/ò/g, "o"],                                                        // ò = o ouvert
+  [/g(?=[eiè])/g, "gu"],                                              // g toujours dur : ge → gue, gi → gui
+  [/([aeiouyèòéàâêîôû])s(?=[aeiouyèòéàâêîôû])/g, "$1ss"],            // s entre voyelles = s (pas z)
+  [/e$/g, "é"],                                                       // e final = é (jamais muet)
+];
+
+/* ---- Détection de langue (par phrase) ---- */
+const MARQ_KREYOL = new Set("mwen nou yo li pa se ki nan ak pou tout gen kote sa yon sou lè tankou paske men bay fè ap te pral konnen kounye poukisa anpil byen tanpri mèsi bonjou bonswa lakay moun bagay kreyòl kreyol ayiti eske dwe vle kapab ka wi non tèt jodi demen isit kisa kijan youn yè pwoblèm sèvè dokiman fòk fòk nap sak pase map".split(" "));
+const MARQ_FR = new Set("le la les un une des est sont je tu il elle nous vous ils elles que qui dans pour avec sur pas mais ou et donc car ce cette ces mon ma mes ton ta tes son sa ses du au aux ne plus très être avoir faire peut peux veux dois comme aussi bien merci bonjour".split(" "));
+const MARQ_EN = new Set("the is are was were you your i we they it this that with for and but not have has can will would should what how why please thanks hello of to in on at as be do does".split(" "));
+function mots(t){ return (t.toLowerCase().match(/[\p{L}']+/gu) || []); }
+function detecterLangue(t){
+  const m = mots(t); let k = 0, f = 0, e = 0;
+  m.forEach(w => { if(MARQ_KREYOL.has(w)) k++; if(MARQ_FR.has(w)) f++; if(MARQ_EN.has(w)) e++; });
+  if(/[òÒ]/.test(t)) k += 2;
+  if(/\b(?:mwen|nou|yo)\b/i.test(t)) k += 1;
+  if(k >= 2 && k >= f && k >= e) return "ht";
+  if(k >= 1 && k > f && k > e) return "ht";
+  if(e > f && e > k) return "en";
+  return "fr";
+}
+
+/* ---- Réécriture kreyòl → prononciation française ---- */
+function kreyolVersFrancais(t){
+  return t.replace(/[\p{L}']+/gu, mot => {
+    const bas = mot.toLowerCase();
+    let r;
+    if(Object.prototype.hasOwnProperty.call(MOTS_KREYOL, bas)) r = MOTS_KREYOL[bas];
+    else { r = bas; for(const [re, to] of REGLES_KREYOL) r = r.replace(re, to); }
+    return r;
+  });
+}
+
+/* ---- Nettoyage du texte avant lecture ---- */
+function texteALire(raw){
+  return String(raw || "")
+    .replace(/```[\s\S]*?```/g, " (code) ")
+    .replace(/\[\[\s*IMG\s*:[^\]]*\]\]/gi, " ")
+    .replace(/!\[[^\]]*\]\([^)]*\)/g, " ")
+    .replace(/\[([^\]]+)\]\([^)]*\)/g, "$1")
+    .replace(/https?:\/\/\S+/g, " lien ")
+    .replace(/^\s*\|.*\|\s*$/gm, " ")
+    .replace(/^\s{0,3}#{1,6}\s*/gm, "")
+    .replace(/^\s*[-*•]\s+/gm, "")
+    .replace(/[*_`~>]/g, "")
+    .replace(/[\u{1F000}-\u{1FFFF}\u{2600}-\u{27BF}\u{FE0F}]/gu, " ")
+    .replace(/[ \t]+/g, " ").replace(/\n{2,}/g, ". ").replace(/\n/g, ", ").trim();
+}
+function decouper(t, max){
+  const phrases = t.split(/(?<=[.!?…:;])\s+/), out = []; let cur = "";
+  for(const p of phrases){
+    if((cur + " " + p).length > max && cur){ out.push(cur.trim()); cur = p; } else cur += " " + p;
+  }
+  if(cur.trim()) out.push(cur.trim());
+  return out.flatMap(x => x.length <= max ? [x] : x.match(new RegExp(".{1," + max + "}(\\s|$)", "g")) || [x]);
+}
+
+/* ---- Lecture ---- */
+let _voixListe = [], _lectureEnCours = null;
+function chargerVoix(){ try{ _voixListe = speechSynthesis.getVoices() || []; }catch(e){} }
+if("speechSynthesis" in window){ chargerVoix(); speechSynthesis.onvoiceschanged = chargerVoix; }
+function choisirVoix(lang){
+  const pref = lang === "en" ? ["en-US","en-GB","en"] : lang === "ht" ? ["ht","fr-FR","fr-CA","fr"] : ["fr-FR","fr-CA","fr"];
+  for(const p of pref){
+    const v = _voixListe.find(x => x.lang && x.lang.replace("_","-").toLowerCase().startsWith(p.toLowerCase()));
+    if(v) return v;
+  }
+  return null;
+}
+function arreterLecture(){
+  try{ speechSynthesis.cancel(); }catch(e){}
+  if(_lectureEnCours){ const f = _lectureEnCours; _lectureEnCours = null; f(); }
+}
+function lireTexte(raw, onFin){
+  if(!("speechSynthesis" in window)) throw new Error("lecture vocale non disponible sur cet appareil");
+  arreterLecture();
+  const propre = texteALire(raw);
+  if(!propre) throw new Error("rien à lire");
+  const file = [];
+  decouper(propre, 200).forEach(ph => {
+    const lg = detecterLangue(ph), v = choisirVoix(lg);
+    const vraiCreole = lg === "ht" && v && /^ht/i.test(v.lang); // si le téléphone a une vraie voix créole
+    const dit = lg === "ht" && !vraiCreole ? kreyolVersFrancais(ph) : ph;
+    const u = new SpeechSynthesisUtterance(dit);
+    if(v){ u.voice = v; u.lang = v.lang; } else u.lang = lg === "en" ? "en-US" : "fr-FR";
+    u.rate = lg === "ht" ? 0.92 : 1; u.pitch = 1;
+    file.push(u);
+  });
+  _lectureEnCours = onFin || (() => {});
+  file.forEach((u, i) => {
+    u.onend = () => { if(i === file.length - 1 && _lectureEnCours){ const f = _lectureEnCours; _lectureEnCours = null; f(); } };
+    u.onerror = () => { if(_lectureEnCours){ const f = _lectureEnCours; _lectureEnCours = null; f(); } };
+    speechSynthesis.speak(u);
+  });
+}
+// Test depuis la console : testerVoixKreyol("Mwen renmen Ayiti anpil")
+window.testerVoixKreyol = t => { const r = kreyolVersFrancais(t); console.log(r); lireTexte(t); return r; };
+
+function afficherMsg(type, texte){
+  const d=document.createElement('div');
+  d.className = "msg " + type;
+  d.dataset.agent = agentActif;
+  const s=document.createElement('div'); s.className = "txt"; d.appendChild(s);
+  remplirMsg(d, texte);
+  if(type === "ai"){
+    const a=document.createElement('div'); a.className = "actions";
+    const c=document.createElement('button'); c.className = "act-btn"; c.textContent = "📋 Copier";
+    const p=document.createElement('button'); p.className = "act-btn"; p.textContent = "📤 Partager";
+    c.onclick = () => copierTexte(d.dataset.raw.replace(/\[\[\s*IMG\s*:[^\]]*\]\]/gi, "").trim(), c);
+    p.onclick = () => partagerTexte(d.dataset.raw.replace(/\[\[\s*IMG\s*:[^\]]*\]\]/gi, "").trim(), p);
+    const l=document.createElement('button'); l.className = "act-btn"; l.textContent = "🔊 Écouter";
+    let enLecture = false;
+    l.onclick = () => {
+      if(enLecture){ arreterLecture(); return; }
+      try{
+        enLecture = true; l.textContent = "⏹️ Arrêter";
+        lireTexte(d.dataset.raw, () => { enLecture = false; l.textContent = "🔊 Écouter"; });
+      }catch(e){ enLecture = false; l.textContent = "🔊 Écouter"; alert("Lecture impossible : " + e.message); }
+    };
+    a.append(c, p, l); d.appendChild(a);
+  }
+  chat.appendChild(d);
+  chat.scrollTop = chat.scrollHeight;
+  return d;
+}
+function ajouterMsg(type, texte){
+  const d = afficherMsg(type, texte);
+  threadActif().vues.push({type, texte});
+  sauverThreads();
+  return d;
+}
+function memoriser(agent, q, r){
+  hist[agent].push({role:"user", content:q}, {role:"assistant", content:r});
+  sauverThreads();
+}
+
+let _dernierePropo = "";
+function proposerAgent(cible, question, pourImage){
+  const cle = threadId + ":" + cible;
+  if(!pourImage && _dernierePropo === cle) return;   // une seule fois de suite, pas de répétition
+  _dernierePropo = cle;
+  const d = ajouterMsg("sys", pourImage
+    ? "🎨 Pour créer une image, passe à l'agent « Image »."
+    : "💡 Cette question semble relever de l'agent « " + NOMS[cible] + " ». Tu peux passer à cet agent si tu veux (je réponds quand même ici).");
+  const b = document.createElement("button"); b.className = "act-btn"; b.style.cssText = "display:block; margin:6px auto 0";
+  b.textContent = "Passer à « " + NOMS[cible] + " »";
+  b.onclick = () => { b.disabled = true; changerAgent(cible, false); if(pourImage) repondre(question); };
+  d.appendChild(b);
+  chat.scrollTop = chat.scrollHeight;
+}
+function changerAgent(nom, auto){
+  agentActif = nom;
+  threadActif().agent = nom;
+  sauverThreads();
+  agentLabel.textContent = NOMS[nom]; majBarreImage();
+  menu.querySelectorAll('button').forEach(x => x.classList.toggle('active', x.dataset.agent === nom));
+  ajouterMsg("sys", auto ? "↪️ Question détectée pour l'agent « " + NOMS[nom] + " » — redirigée automatiquement." : "Agent actif : " + NOMS[nom]);
+}
+/* ---- Agent Image : style, prompt anglais, galerie ---- */
+const DEMANDE_IMAGE = /^(?:(?:s'il (?:te|vous) plait|tanpri|svp|stp|please)\s+)?(?:envoi\w*|envoy\w*|voye|montr\w*|donn\w*|gener\w*|fais|fe|cre\w*|dessin\w*|produi\w*|fabriqu\w*|make|generate|show|send|create|draw)(?:[\s-]+(?:moi|mwen|m|nou|me|us))?\s+(?:(?:un|une|yon|des|de|an|the|a|some)\s+)?(?:[\w'’-]+\s+){0,2}?(?:image|imaj|photo|foto|illustration|dessin|picture|portrait|logo|affiche)s?\b/;
+const STYLES = {
+  reel:   {nom: "📷 Réaliste",    suffixe: ", photorealistic, real photograph, natural lighting, sharp focus, highly detailed, 35mm DSLR photo"},
+  illus:  {nom: "🎨 Illustration", suffixe: ", digital illustration, vibrant colors, detailed, clean composition"},
+  dessin: {nom: "✏️ Dessin",       suffixe: ", hand-drawn pencil sketch, detailed linework"},
+  libre:  {nom: "✨ Libre",        suffixe: ""}
+};
+let styleImage = "reel"; try{ styleImage = localStorage.getItem("knall-style") || "reel"; }catch(e){}
+if(!STYLES[styleImage]) styleImage = "reel";
+
+async function preparerPrompt(p){
+  let en = p;
+  try{   // demande (créole / français) -> prompt anglais court ; si ça rate, on garde le texte tel quel
+    const ctl = new AbortController(), t = setTimeout(() => ctl.abort(), 25000);
+    const res = await fetch(PROXY_URL.replace(/\/$/, "") + "/chat", {
+      method: "POST", signal: ctl.signal,
+      headers: {"Content-Type": "application/json", "x-knall-token": APP_TOKEN},
+      body: JSON.stringify({agent: "general", messages: [{role: "user", content:
+        "Transforme cette demande d'image en un prompt anglais court et précis (45 mots maximum) pour un générateur d'images. Réponds UNIQUEMENT avec le prompt, sans guillemets ni explication.\n\nDemande : " + p}]})
+    });
+    clearTimeout(t);
+    if(res.ok){
+      const d = await res.json();
+      const r = String(d.reponse || "").replace(/^[\s"'«]+|[\s"'»]+$/g, "").split("\n")[0];
+      if(r.length > 8 && r.length < 400) en = r;
+    }
+  }catch(e){}
+  return (en + (STYLES[styleImage] || STYLES.reel).suffixe).slice(0, 480);
+}
+function marquerStyle(){ $("styleBar").querySelectorAll("[data-k]").forEach(b => b.classList.toggle("on", b.dataset.k === styleImage)); }
+function majBarreImage(){
+  const bar = $("styleBar"), on = agentActif === "image";
+  bar.classList.toggle("on", on);
+  input.placeholder = on ? "Décris l'image que tu veux…" : "Écrivez un message...";
+  if(!on || bar.dataset.ok) return;
+  bar.dataset.ok = "1";
+  Object.keys(STYLES).forEach(k => {
+    const b = document.createElement("button"); b.className = "pill"; b.dataset.k = k; b.textContent = STYLES[k].nom;
+    b.onclick = () => { styleImage = k; try{ localStorage.setItem("knall-style", k); }catch(e){} marquerStyle(); };
+    bar.appendChild(b);
+  });
+  const g = document.createElement("button"); g.className = "pill"; g.textContent = "🖼️ Galerie"; g.onclick = ouvrirGalerie; bar.appendChild(g);
+  marquerStyle();
+}
+function nomImage(media, blob){ return "knall-image-" + media.id.slice(-5) + "." + ((blob.type.split("/")[1] || "png").replace("jpeg", "jpg")); }
+function ouvrirGalerie(){
+  const grid = $("galerieGrid"); grid.innerHTML = "";
+  const liste = [];
+  threads.forEach(t => (t.vues || []).forEach(v => { if(v.media && v.media.kind === "image") liste.push(v.media); }));
+  liste.reverse();
+  $("galerieVide").hidden = liste.length > 0;
+  Promise.all(liste.map(m => mediaGet(m.id).then(b => [m, b]))).then(arr => arr.filter(x => x[1]).forEach(([media, blob]) => {
+    const tile = document.createElement("div"); tile.className = "gtile";
+    const im = document.createElement("img"); im.alt = media.prompt; im.src = URL.createObjectURL(blob);
+    const cap = document.createElement("div"); cap.className = "cap"; cap.textContent = media.prompt;
+    const btns = document.createElement("div"); btns.className = "btns";
+    const nom = nomImage(media, blob);
+    const mk = (t, f) => { const b = document.createElement("button"); b.className = "act-btn"; b.textContent = t; b.onclick = () => f(b); btns.appendChild(b); };
+    mk("💾 Enregistrer", b => sauverBlob(nom, blob, b, false));
+    mk("📤", b => sauverBlob(nom, blob, b, true));
+    tile.append(im, cap, btns); grid.appendChild(tile);
+  }));
+  $("galerie").hidden = false;
+}
+$("galerieClose").onclick = () => { $("galerie").hidden = true; };
+$("galerie").addEventListener("click", e => { if(e.target === $("galerie")) $("galerie").hidden = true; });
+
+let imageAEnvoyer = null;
+async function repondre(question){
+  const img = imageAEnvoyer; imageAEnvoyer = null;
+  if(DECLENCHEUR_MUSIQUE.test(question.trim())){
+    await genererMusique(question.replace(DECLENCHEUR_MUSIQUE, "").trim() || "musique");
+    return;
+  }
+  const brut = question.trim();
+  const sansFichier = !img && !brut.includes("--- ");
+  const explicite = DECLENCHEUR_IMAGE.test(brut);   // « image : … », « dessine … » : ordre clair, on l'exécute
+  if(sansFichier && (agentActif === "image" || explicite)){
+    if(!MODE_EN_LIGNE){ ajouterMsg("ai", "📴 Mode sans connexion : la génération d'image a besoin d'internet. Passe en ligne avec le bouton en haut."); return; }
+    await genererImage(explicite ? (brut.replace(DECLENCHEUR_IMAGE, "").trim() || brut) : brut);
+    return;
+  }
+  // Demande de document (Excel, Word, PDF...) : le serveur crée le vrai fichier
+  if(demandeDocument(brut)){
+    if(!MODE_EN_LIGNE){ ajouterMsg("ai", "📴 Mode sans connexion : la création de documents a besoin d'internet. Passe en ligne avec le bouton en haut."); return; }
+    await creerDocument(question); return;
+  }
+  // Demande d'image devinée : on ne change pas d'agent, on dit à la personne d'y aller
+  if(sansFichier && DEMANDE_IMAGE.test(norm(brut))){ proposerAgent("image", question, true); return; }
+  if(ROUTAGE_AUTO && !img){ const cible = detecterAgent(question, agentActif); if(cible && cible !== "image") proposerAgent(cible, question, false); }
+  const agent = agentActif;
+  // 0) agent Rédaction : outils de texte hors ligne
+  if(agent === "redaction"){ const rr = redaction(question); if(rr){ ajouterMsg("ai", rr); memoriser(agent, question, rr); return; } }
+  // 1) base locale
+  const local = (!img && (BASE_LOCALE || !MODE_EN_LIGNE)) ? chercherReponse(question, KB[agent] || []) : null;
+  if(local){ ajouterMsg("ai", local); memoriser(agent, question, local); return; }
+  // 2) serveur (si configure et en ligne)
+  if(!MODE_EN_LIGNE){ ajouterMsg("ai", "📴 Mode sans connexion : je n'ai pas de réponse dans ma base pour ça. Passe en ligne (bouton en haut) pour interroger le serveur."); memoriser(agent, question, "(pas de réponse locale)"); return; }
+  if(!PROXY_URL){ ajouterMsg("ai", "Rien dans la base locale, et le serveur n'est pas encore configuré (PROXY_URL en haut du script)."); return; }
+  if(!navigator.onLine){ ajouterMsg("ai", "Pas de connexion et pas de réponse dans la base locale. (Le modèle offline viendra ici plus tard.)"); return; }
+  const bulle = ajouterMsg("ai", "…"); // ajoute deja une entree "…" dans vues, on la corrige apres
+  bulle.classList.add("pending");
+  bulle.querySelector(".txt").innerHTML = '<div class="typing"><span></span><span></span><span></span></div>';
+  try{
+    const rep = await appelerServeur(agent, question, img);
+    remplirMsg(bulle, rep);
+    bulle.classList.remove("pending");
+    const v = threadActif().vues; v[v.length-1].texte = rep;
+    memoriser(agent, question, rep);
+    if(APPRENDRE && sansFichier) sauverAppris(agent, question, rep);   // pas pour un fichier/une image joints (question geante)
+  }catch(e){
+    bulle.classList.remove("pending");
+    const msg = "Impossible de joindre le serveur : " + (e.name === "AbortError" ? "délai dépassé" : e.message);
+    remplirMsg(bulle, msg);
+    const v = threadActif().vues; v[v.length-1].texte = msg;
+    sauverThreads();
+  }
+  chat.scrollTop = chat.scrollHeight;
+}
+function send(){
+  const v=input.value.trim();
+  if(!v && !fichierJoint) return;
+  if(fichierJoint && fichierJoint.pending){ ajouterMsg("sys", "⏳ Lecture de l'image en cours, patiente un instant…"); return; }
+  const fj = fichierJoint;
+  const affiche = v + (fj ? (v ? "\n" : "") + "📎 " + fj.nom : "");
+  const envoye = (v || ((fj && fj.image ? "Analyse le texte de cette image : " : "Analyse ce fichier : ") + (fj ? fj.nom : ""))) +
+    (fj ? "\n\n--- " + (fj.image ? "Texte lu dans l'image" : "Contenu du fichier") + " « " + fj.nom + " » ---\n" + fj.texte : "");
+  renommerSiPremier(v || (fj ? fj.nom : ""));
+  const bulleUser = ajouterMsg("user", affiche);
+  if(fj && fj.image && bulleUser){ const im = new Image(); im.src = fj.image; im.className = "gen"; im.style.maxWidth = "200px"; bulleUser.appendChild(im); }
+  input.value=''; input.style.height='auto';
+  fichierJoint = null; renderFichierJoint();
+  imageAEnvoyer = fj && fj.image ? fj.image : null;
+  repondre(envoye);
+}
+document.getElementById('sendBtn').onclick=send;
+input.addEventListener('keydown',e=>{ if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); send(); } });
+input.addEventListener('input',()=>{ input.style.height='auto'; input.style.height=Math.min(input.scrollHeight,120)+'px'; });
+window.addEventListener('offline', () => ajouterMsg("sys", "Hors connexion — seule la base locale répond."));
+window.addEventListener('online', () => ajouterMsg("sys", "Connexion rétablie."));
+
+/* ---- Empeche le clavier de cacher la barre de saisie (Android/webview) ---- */
+if(window.visualViewport){
+  const vv = window.visualViewport, pied = document.querySelector('footer');
+  const ajusterClavier = () => {
+    const decalage = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
+    pied.style.transform = decalage > 2 ? "translateY(-" + decalage + "px)" : "";
+    if(decalage > 2) chat.scrollTop = chat.scrollHeight;
+  };
+  vv.addEventListener('resize', ajusterClavier);
+  vv.addEventListener('scroll', ajusterClavier);
+}
+
+chargerKB().then(() => {
+  chargerAppris();
+  chargerThreads();
+  let dernierId = null; try{ dernierId = localStorage.getItem('knall-dernier-fil'); }catch(e){}
+  ouvrirConversation(threads.find(t => t.id === dernierId) ? dernierId : threads[0].id);
+  if(fbPret) synchroniserConnaissances();
+});
+window.addEventListener('beforeunload', () => { try{ localStorage.setItem('knall-dernier-fil', threadId); }catch(e){} });
+
+/* ---- Menu admin caché : 5 clics en 2 secondes sur le logo ---- */
+const CODE_ADMIN = "000999";
+let taps = [], echecs = 0, verrou = 0;
+
+$('brand').addEventListener('click', () => {
+  const now = Date.now();
+  taps = taps.filter(t => now - t <= 2000);
+  taps.push(now);
+  if(taps.length >= 5){ taps = []; ouvrirAdmin(); }
+});
+
+function ouvrirAdmin(){
+  $('admin').hidden = false;
+  $('pin').value = ''; $('pinMsg').textContent = '';
+  $('pinView').hidden = false; $('adminView').hidden = true;
+  setTimeout(() => $('pin').focus(), 50);
+}
+function fermerAdmin(){ $('admin').hidden = true; $('pin').value = ''; }
+$('adminClose').onclick = fermerAdmin;
+$('admin').addEventListener('click', e => { if(e.target === $('admin')) fermerAdmin(); });
+
+function verifierCode(){
+  const reste = Math.ceil((verrou - Date.now()) / 1000);
+  if(reste > 0){ $('pinMsg').textContent = "Trop d'essais. Réessaie dans " + reste + " s."; return; }
+  if($('pin').value === CODE_ADMIN){
+    echecs = 0;
+    $('pinView').hidden = true; $('adminView').hidden = false;
+    $('admAgent').value = agentActif;
+    rendreAdmin();
+  }else{
+    echecs++; $('pin').value = '';
+    if(echecs >= 3){ verrou = Date.now() + 30000; echecs = 0; $('pinMsg').textContent = "Code incorrect. Accès bloqué 30 s."; }
+    else $('pinMsg').textContent = "Code incorrect.";
+  }
+}
+$('pinOk').onclick = verifierCode;
+$('pin').addEventListener('keydown', e => { if(e.key === 'Enter') verifierCode(); });
+
+function lireAppris(){ try{ return JSON.parse(localStorage.getItem('knall-appris') || '{}'); }catch(e){ return {}; } }
+function ecrireAppris(a){ try{ localStorage.setItem('knall-appris', JSON.stringify(a)); }catch(e){} }
+function ajouterConnaissance(agent, q, r, tags){
+  const item = {id:"adm"+Date.now()+Math.floor(Math.random()*1000), question:q, reponse:r, tags:tags};
+  KB[agent].push(item);
+  const a = lireAppris();
+  (a[agent] = a[agent] || []).push(item);
+  ecrireAppris(a);
+  pousseConnaissanceFirebase(agent, item);
+}
+
+function rendreAdmin(){
+  const agent = $('admAgent').value;
+  const ajoutees = lireAppris()[agent] || [];
+  $('admCount').textContent = (KB[agent].length - ajoutees.length) + " de base + " + ajoutees.length + " ajoutée(s) sur cet appareil";
+  const liste = $('admList'); liste.innerHTML = '';
+  ajoutees.slice().reverse().forEach(it => {
+    const d = document.createElement('div'); d.className = 'adm-item';
+    const del = document.createElement('button'); del.textContent = 'supprimer';
+    del.onclick = () => {
+      KB[agent] = KB[agent].filter(x => x.id !== it.id);
+      const a = lireAppris(); a[agent] = (a[agent] || []).filter(x => x.id !== it.id); ecrireAppris(a);
+      rendreAdmin();
+    };
+    const q = document.createElement('b'); q.textContent = it.question;
+    d.append(del, q, document.createElement('br'), document.createTextNode(it.reponse));
+    liste.appendChild(d);
+  });
+}
+$('admAgent').onchange = rendreAdmin;
+
+$('admAdd').onclick = () => {
+  const q = $('admQ').value.trim(), r = $('admR').value.trim();
+  if(!q || !r){ $('admMsg').textContent = "La question et la réponse sont obligatoires."; return; }
+  const tags = $('admT').value.split(',').map(t => t.trim()).filter(Boolean);
+  ajouterConnaissance($('admAgent').value, q, r, tags);
+  $('admQ').value = ''; $('admR').value = ''; $('admT').value = '';
+  $('admMsg').textContent = "Ajouté ✅";
+  rendreAdmin();
+};
+
+$('admExport').onclick = () => {
+  const agent = $('admAgent').value;
+  const blob = new Blob([JSON.stringify(KB[agent], null, 2)], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = agent + '.json';
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+};
+
+$('admImportBtn').onclick = () => $('admFile').click();
+$('admFile').onchange = async e => {
+  const f = e.target.files[0]; if(!f) return;
+  const agent = $('admAgent').value;
+  try{
+    const data = JSON.parse(await f.text());
+    if(!Array.isArray(data)) throw new Error("le fichier doit contenir une liste");
+    const deja = new Set(KB[agent].map(x => norm(x.question)));
+    let n = 0;
+    data.forEach(x => {
+      if(x && typeof x.question === 'string' && typeof x.reponse === 'string' && !deja.has(norm(x.question))){
+        ajouterConnaissance(agent, x.question, x.reponse, Array.isArray(x.tags) ? x.tags : []);
+        deja.add(norm(x.question)); n++;
+      }
+    });
+    $('admMsg').textContent = n + " entrée(s) importée(s) dans " + NOMS[agent] + ".";
+  }catch(err){
+    $('admMsg').textContent = "Import impossible : " + err.message;
+  }
+  e.target.value = '';
+  rendreAdmin();
+};
+
+/* ---- Test des API (admin) ---- */
+$('admTest').onclick = async () => {
+  const out = $('admTestOut'), lignes = [];
+  const maj = () => out.textContent = lignes.join('\n');
+  const essai = async (nom, f) => {
+    const t0 = Date.now(); lignes.push('⏳ ' + nom); maj(); const i = lignes.length - 1;
+    try{ const r = await f(); lignes[i] = '✅ ' + nom + ' (' + (Date.now()-t0) + ' ms)' + (r ? ' — ' + r : ''); }
+    catch(e){ lignes[i] = '❌ ' + nom + ' : ' + e.message; }
+    maj();
+  };
+  const avecDelai = (p, ms) => Promise.race([p, new Promise((_, r) => setTimeout(() => r(new Error('délai dépassé')), ms))]);
+  await essai('Librairie PDF (pdf.js)', async () => { if(!window.pdfjsLib) throw new Error('non chargée'); });
+  await essai('Librairie Word (mammoth)', async () => { if(!window.mammoth) throw new Error('non chargée'); });
+  await essai('Firebase (connexion anonyme)', async () => { if(!db) throw new Error('init impossible'); if(!fbPret) throw new Error('auth pas prête'); });
+  await essai('Serveur /chat', async () => { const r = await avecDelai(appelerServeur('general', 'test'), 70000); return String(r).slice(0, 40); });
+  await essai('Serveur /image', async () => {
+    const r = await avecDelai(fetch(PROXY_URL.replace(/\/$/, '') + '/image?prompt=test', {headers:{'x-knall-token': APP_TOKEN}}), 70000);
+    if(!r.ok) throw new Error('Erreur ' + r.status);
+  });
+};
+
+/* ---- Paramètres ---- */
+let SYNC_AUTRES = _lire("knall-sync", true);
+const lireAutos = () => { const a = lireAppris(); let n = 0; for(const k in a) n += a[k].filter(x => String(x.id).startsWith("auto")).length; return n; };
+function majModes(){
+  const baseActive = BASE_LOCALE || !MODE_EN_LIGNE;   // sans connexion : la base locale est obligatoire
+  const set = (id, txt, on) => { const e = $(id); e.textContent = txt; e.className = 'pill ' + (on ? 'on' : 'off'); };
+  set('modeNet', MODE_EN_LIGNE ? '🌐 Avec internet' : '📴 Sans connexion', MODE_EN_LIGNE);
+  set('modeBase', '📚 Ma base (ma propre recherche) : ' + (baseActive ? 'ON' : 'OFF'), baseActive);
+  $('modeBase').disabled = !MODE_EN_LIGNE;
+  set('modeApprend', '💾 Garder les réponses du serveur : ' + (APPRENDRE ? 'ON' : 'OFF'), APPRENDRE);
+  set('modeSync', '☁️ Recevoir les connaissances des autres : ' + (SYNC_AUTRES ? 'ON' : 'OFF'), SYNC_AUTRES);
+  const n = lireAutos(); let ko = 0; try{ ko = Math.round((localStorage.getItem('knall-appris') || '').length / 1024); }catch(e){}
+  mediaCount().then(c => set('viderMedia', '🗑️ Vider images et musiques (' + c + ')', false));
+  set('viderAppris', '🧹 Vider les réponses apprises (' + n + ')', false);
+  $('stockInfo').textContent = 'Réponses gardées sur ce téléphone : ' + n + ' · environ ' + ko + ' Ko. Tes propres ajouts (admin) ne sont pas touchés.';
+  try{
+    localStorage.setItem('knall-online', MODE_EN_LIGNE ? '1' : '0'); localStorage.setItem('knall-base', BASE_LOCALE ? '1' : '0');
+    localStorage.setItem('knall-apprendre', APPRENDRE ? '1' : '0'); localStorage.setItem('knall-sync', SYNC_AUTRES ? '1' : '0');
+  }catch(e){}
+}
+$('modeNet').onclick = () => { MODE_EN_LIGNE = !MODE_EN_LIGNE; majModes(); };
+$('modeBase').onclick = () => { BASE_LOCALE = !BASE_LOCALE; majModes(); };
+$('modeApprend').onclick = () => { APPRENDRE = !APPRENDRE; majModes(); };
+$('modeSync').onclick = () => { SYNC_AUTRES = !SYNC_AUTRES; majModes(); if(SYNC_AUTRES && fbPret) synchroniserConnaissances(); };
+$('viderAppris').onclick = () => {
+  const a = lireAppris(); for(const k in a) a[k] = a[k].filter(x => !String(x.id).startsWith("auto")); ecrireAppris(a);
+  for(const k in KB) KB[k] = KB[k].filter(x => !String(x.id).startsWith("auto"));
+  majModes();
+};
+$('viderMedia').onclick = async () => { await mediaClear(); majModes(); };
+$('settingsBtn').onclick = () => { majModes(); $('reglages').hidden = false; };
+$('reglagesClose').onclick = () => { $('reglages').hidden = true; };
+$('reglages').addEventListener('click', e => { if(e.target === $('reglages')) $('reglages').hidden = true; });
+majModes();
+</script>
+<div id="apercu">
+  <div id="apercuBar">
+    <span id="apercuNom"></span>
+    <button class="act-btn" id="apercuReload">🔄</button>
+    <button class="act-btn" id="apercuShare">📤</button>
+    <button class="act-btn" id="apercuDl">⬇️</button>
+    <button class="act-btn" id="apercuClose">✕</button>
+  </div>
+  <iframe id="apercuFrame" sandbox="allow-scripts allow-forms allow-modals allow-popups"></iframe>
+</div>
+<div id="viewer">
+  <div id="viewerBar">
+    <span id="viewerNom"></span>
+    <span class="lock">🔒 Lecture seule</span>
+    <button class="act-btn" id="viewerCopy">📋</button>
+    <button class="act-btn" id="viewerDl">⬇️</button>
+    <button class="act-btn" id="viewerClose">✕</button>
+  </div>
+  <div id="viewerCode"></div>
+</div>
+</body>
+</html>
