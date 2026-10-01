@@ -79,6 +79,10 @@ main{flex:1; overflow-y:auto; padding:16px; display:flex; flex-direction:column;
 .md code{background:rgba(128,128,128,.22); padding:1px 5px; border-radius:5px; font-family:ui-monospace,Menlo,Consolas,monospace; font-size:.92em}
 .md ul,.md ol{margin:4px 0 8px; padding-left:22px}
 .md li{margin:2px 0}
+.md a{color:var(--accent1); text-decoration:underline; word-break:break-all}
+.img-frame{border:1px solid var(--border); border-radius:14px; overflow:hidden; background:var(--card); margin:8px 0; max-width:100%}
+.img-frame img{display:block; width:100%; max-width:320px; margin:0 auto}
+.img-frame .img-dl{display:block; text-align:center; padding:7px; font-size:12.5px; color:var(--accent1); text-decoration:none; border-top:1px solid var(--border)}
 .md .tbl-wrap{overflow-x:auto; margin:8px 0; -webkit-overflow-scrolling:touch}
 .md table{border-collapse:collapse; font-size:13px; min-width:100%}
 .md th,.md td{border:1px solid var(--border); padding:5px 9px; text-align:left; white-space:nowrap}
@@ -767,7 +771,7 @@ $("camBtn").onclick = () => $("camInput").click();
 
 /* ---- Génération d'image (Pollinations, via le serveur relais) ---- */
 const DECLENCHEUR_MUSIQUE = /^(musique|music|mizik|compose(-moi)?\s+(une\s+|yon\s+)?(musique|m[ée]lodie|mizik)|cr[ée]e(-moi)?\s+(une\s+)?(musique|m[ée]lodie)|fè\s+yon\s+mizik)\s*[:\-]?\s*/i;
-const DECLENCHEUR_IMAGE = /^(photo\s*[:\-]|illustration\s*[:\-]|(fais|fè|fe)(-moi)?\s+(une|yon)\s+(image|imaj|photo)|image\s*[:\-]?|imaj\s*[:\-]?|g[ée]n[èe]re(-|\s+)?(moi\s+)?(une\s+)?image|dessine(-moi)?|dessin\s*[:\-]?|cr[ée]e(-moi)?\s+(une\s+)?image|fè\s+yon\s+imaj)\s*/i;
+const DECLENCHEUR_IMAGE = /^(photo\s*[:\-]|illustration\s*[:\-]|(?:(fais|fè|fe)(-moi)?\s+(une|yon)\s+(image|imaj|photo)|image|imaj|g[ée]n[èe]re(-|\s+)?(moi\s+)?(une\s+)?image|dessine(-moi)?|dessin|cr[ée]e(-moi)?\s+(une\s+)?image|fè\s+yon\s+imaj)(?![a-zà-ÿ])\s*[:\-]?)\s*/i;
 /* ---- Stockage des images / musiques (IndexedDB, hors du localStorage) ---- */
 let _mdb = null;
 function mediaDB(){
@@ -973,7 +977,7 @@ const iconeMedia = k => k === "audio" ? "🎵 " : k === "document" ? "📄 " : "
 const DOC_VERBE = "(?:fe|fais|faire|fabrique|fabriquer|cree|creer|creez|kreye|genere|generer|generez|prepare|preparer|redige|rediger|ecris|ecrire|produis|produire|voye|envoi|envoie|envoyer|donne|donner|bay|convertis|convertir|konverti|transforme|transformer|exporte|exporter|ekspote|make|create|generate|send|write|convert|export)\\b";
 const DOC_DEBUT = "^(?:(?:s'il (?:te|vous) plait|tanpri|svp|stp|please)\\s+)?" + DOC_VERBE + "(?:[\\s-]+(?:moi|mwen|m|nou|me|us))?\\s+(?:[\\w'’-]+\\s+){0,4}?";
 const DOC_FORT = new RegExp(DOC_DEBUT + "(?:pdf|word|docx|excel|xlsx|xls|csv|tableur|spreadsheet)\\b");
-const DOC_GENERIQUE = new RegExp(DOC_DEBUT + "(?:documents?|dokiman)\\b");
+const DOC_GENERIQUE = new RegExp(DOC_DEBUT.replace("(?:[\\w'’-]+\\s+){0,4}?", "(?:(?!(?:ce|cet|cette|ces|mon|ma|mes|ton|ta|tes|son|sa|ses)\\s)[\\w'’-]+\\s+){0,4}?") + "(?:documents?|dokiman)\\b");
 const DOC_LABEL = {xlsx:"Excel", docx:"Word", pdf:"PDF", csv:"CSV", txt:"Texte", md:"Markdown", html:"HTML", json:"JSON"};
 const DOC_TEXTE = /^(txt|md|csv|tsv|json|xml|html|htm|css|js|ts|jsx|py|java|php|sql|sh|bat|c|cpp|cs|go|rs|kt|swift|rb|yml|yaml|ini|log|svg|ics|vcf|srt|tex)$/;
 function demandeDocument(brut){
@@ -1209,12 +1213,23 @@ function carteFichier(seg, tous){
 }
 /* ---- Rendu Markdown minimal (gras, titres, tableaux, listes) — 100% hors ligne ---- */
 function escHtml(s){ return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+function estImageUrl(url){ return /\.(png|jpe?g|gif|webp|svg)(\?[^\s]*)?$/i.test(url); }
+function lienHtml(url, texte){
+  const safe = url.replace(/"/g, "%22");
+  if(estImageUrl(url)){
+    return '<div class="img-frame"><img src="'+safe+'" alt="image" loading="lazy">'+
+      '<a class="img-dl" href="'+safe+'" download target="_blank" rel="noopener noreferrer">⬇ Télécharger</a></div>';
+  }
+  return '<a href="'+safe+'" target="_blank" rel="noopener noreferrer">'+(texte||url)+'</a>';
+}
 function inlineMd(s){
   s = escHtml(s);
   s = s.replace(/`([^`]+)`/g, '<code>$1</code>');
   s = s.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
   s = s.replace(/`/g, "");  // backtick isole (reponse coupee)
-  s = s.replace(/(^|[^*\w])\*([^*\n]+)\*(?!\*)/g, '$1<em>$2</em>');
+  s = s.replace(/(^|[^*\w])\*(?=[^\s*])([^*\n]*[^\s*])\*(?!\*)/g, '$1<em>$2</em>');
+  s = s.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)|(https?:\/\/[^\s<]+[^\s<.,;:!?)])/g,
+    (m, txt, url1, url2) => lienHtml(url1 || url2, txt));
   return s;
 }
 function ligneTable(l){
@@ -1363,7 +1378,7 @@ function changerAgent(nom, auto){
   ajouterMsg("sys", auto ? "↪️ Question détectée pour l'agent « " + NOMS[nom] + " » — redirigée automatiquement." : "Agent actif : " + NOMS[nom]);
 }
 /* ---- Agent Image : style, prompt anglais, galerie ---- */
-const DEMANDE_IMAGE = /^(?:(?:s'il (?:te|vous) plait|tanpri|svp|stp|please)\s+)?(?:envoy\w*|voye|montr\w*|donn\w*|gener\w*|fais|fe|cre\w*|dessin\w*|produi\w*|fabriqu\w*|make|generate|show|send|create|draw)(?:[\s-]+(?:moi|mwen|m|nou|me|us))?\s+(?:(?:un|une|yon|des|de|an|the|a|some)\s+)?(?:[\w'’-]+\s+){0,2}?(?:image|imaj|photo|foto|illustration|dessin|picture|portrait|logo|affiche)s?\b/;
+const DEMANDE_IMAGE = /^(?:(?:s'il (?:te|vous) plait|tanpri|svp|stp|please)\s+)?(?:envoi\w*|envoy\w*|voye|montr\w*|donn\w*|gener\w*|fais|fe|cre\w*|dessin\w*|produi\w*|fabriqu\w*|make|generate|show|send|create|draw)(?:[\s-]+(?:moi|mwen|m|nou|me|us))?\s+(?:(?:un|une|yon|des|de|an|the|a|some)\s+)?(?:[\w'’-]+\s+){0,2}?(?:image|imaj|photo|foto|illustration|dessin|picture|portrait|logo|affiche)s?\b/;
 const STYLES = {
   reel:   {nom: "📷 Réaliste",    suffixe: ", photorealistic, real photograph, natural lighting, sharp focus, highly detailed, 35mm DSLR photo"},
   illus:  {nom: "🎨 Illustration", suffixe: ", digital illustration, vibrant colors, detailed, clean composition"},
@@ -1472,7 +1487,7 @@ async function repondre(question){
     bulle.classList.remove("pending");
     const v = threadActif().vues; v[v.length-1].texte = rep;
     memoriser(agent, question, rep);
-    if(APPRENDRE) sauverAppris(agent, question, rep);
+    if(APPRENDRE && sansFichier) sauverAppris(agent, question, rep);   // pas pour un fichier/une image joints (question geante)
   }catch(e){
     bulle.classList.remove("pending");
     const msg = "Impossible de joindre le serveur : " + (e.name === "AbortError" ? "délai dépassé" : e.message);
