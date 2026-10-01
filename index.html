@@ -83,6 +83,10 @@ main{flex:1; overflow-y:auto; padding:16px; display:flex; flex-direction:column;
 .img-frame{border:1px solid var(--border); border-radius:14px; overflow:hidden; background:var(--card); margin:8px 0; max-width:100%}
 .img-frame img{display:block; width:100%; max-width:320px; margin:0 auto}
 .img-frame .img-dl{display:block; text-align:center; padding:7px; font-size:12.5px; color:var(--accent1); text-decoration:none; border-top:1px solid var(--border)}
+.img-frame .img-load{padding:22px 12px; text-align:center; font-size:13px; color:var(--sub)}
+.img-frame .img-bar{display:flex; border-top:1px solid var(--border)}
+.img-frame .img-bar button{flex:1; border:0; background:none; font:inherit; font-size:12.5px; padding:8px; color:var(--accent1); cursor:pointer; text-align:center}
+.img-frame .img-bar button+button{border-left:1px solid var(--border)}
 .md .tbl-wrap{overflow-x:auto; margin:8px 0; -webkit-overflow-scrolling:touch}
 .md table{border-collapse:collapse; font-size:13px; min-width:100%}
 .md th,.md td{border:1px solid var(--border); padding:5px 9px; text-align:left; white-space:nowrap}
@@ -1214,23 +1218,28 @@ function carteFichier(seg, tous){
 /* ---- Rendu Markdown minimal (gras, titres, tableaux, listes) — 100% hors ligne ---- */
 function escHtml(s){ return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
 function estImageUrl(url){ return /\.(png|jpe?g|gif|webp|svg)(\?[^\s]*)?$/i.test(url); }
+function cadreImage(q, url){
+  const a = s => String(s||"").replace(/"/g, "&quot;");
+  return '<div class="img-frame" data-q="'+a(q)+'" data-u="'+a(url)+'"><div class="img-load">🔍 Recherche de l\'image…</div></div>';
+}
 function lienHtml(url, texte){
   const safe = url.replace(/"/g, "%22");
-  if(estImageUrl(url)){
-    return '<div class="img-frame"><img src="'+safe+'" alt="image" loading="lazy">'+
-      '<a class="img-dl" href="'+safe+'" download target="_blank" rel="noopener noreferrer">⬇ Télécharger</a></div>';
-  }
+  if(estImageUrl(url)) return cadreImage("", url);
   return '<a href="'+safe+'" target="_blank" rel="noopener noreferrer">'+(texte||url)+'</a>';
 }
 function inlineMd(s){
   s = escHtml(s);
+  const cadres = [];   // les cadres d'image sont mis de côté pour ne pas être re-transformés en liens
+  const garde = html => "\uE010" + (cadres.push(html) - 1) + "\uE011";
+  s = s.replace(/\[\[\s*IMG\s*:\s*([^\]]+?)\s*\]\]/gi, (m, q) => garde(cadreImage(q, "")));
+  s = s.replace(/!\[([^\]]*)\]\((https?:\/\/[^\s)]+)\)/g, (m, alt, url) => garde(cadreImage(alt, url)));
   s = s.replace(/`([^`]+)`/g, '<code>$1</code>');
   s = s.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
   s = s.replace(/`/g, "");  // backtick isole (reponse coupee)
   s = s.replace(/(^|[^*\w])\*(?=[^\s*])([^*\n]*[^\s*])\*(?!\*)/g, '$1<em>$2</em>');
   s = s.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)|(https?:\/\/[^\s<]+[^\s<.,;:!?)])/g,
-    (m, txt, url1, url2) => lienHtml(url1 || url2, txt));
-  return s;
+    (m, txt, url1, url2) => { const u = url1 || url2; return estImageUrl(u) ? garde(cadreImage("", u)) : lienHtml(u, txt); });
+  return s.replace(/\uE010(\d+)\uE011/g, (m, n) => cadres[+n]);
 }
 function ligneTable(l){
   let c = l.trim(); if(c.startsWith("|")) c = c.slice(1); if(c.endsWith("|")) c = c.slice(0,-1);
@@ -1307,6 +1316,77 @@ function renduMarkdownBrut(texte){
   return html;
 }
 
+/* ---- Images dans les réponses : on teste l'image, sinon on en cherche une autre (serveur /photos) ---- */
+const _cachePhotos = new Map();
+function testerImage(url){
+  return new Promise(ok => {
+    const im = new Image(); let fini = false;
+    const fin = v => { if(!fini){ fini = true; ok(v); } };
+    im.onload = () => fin(im.naturalWidth >= 80 && im.naturalHeight >= 60);
+    im.onerror = () => fin(false);
+    setTimeout(() => fin(false), 15000);
+    im.referrerPolicy = "no-referrer";
+    im.src = url;
+  });
+}
+async function chercherPhotosServeur(q){
+  if(_cachePhotos.has(q)) return _cachePhotos.get(q);
+  let liste = [];
+  try{
+    const r = await fetch(PROXY_URL.replace(/\/$/, "") + "/photos?q=" + encodeURIComponent(q) + "&n=6", {headers:{"x-knall-token": APP_TOKEN}});
+    const d = await r.json().catch(() => ({}));
+    liste = (d.photos || []).map(p => p.url);
+  }catch(e){}
+  if(liste.length) _cachePhotos.set(q, liste);
+  return liste;
+}
+async function telechargerImageUrl(url, btn){
+  try{
+    const r = await fetch(url); const b = await r.blob();
+    const a = document.createElement("a"); a.href = URL.createObjectURL(b);
+    a.download = "knall-image-" + Date.now().toString().slice(-5) + "." + ((b.type.split("/")[1] || "jpg").replace("jpeg","jpg").replace("svg+xml","svg"));
+    document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+  }catch(e){ window.open(url, "_blank", "noopener"); }
+}
+async function resoudreImage(fr){
+  if(fr.dataset.fait) return; fr.dataset.fait = "1";
+  const q = (fr.dataset.q || "").trim(), u0 = fr.dataset.u || "";
+  const essayes = new Set(); let file = u0 ? [u0] : [], serveurFait = false, courante = null;
+  async function suivante(){
+    for(;;){
+      if(!file.length){
+        if(serveurFait || !q) return null;
+        serveurFait = true;
+        file = (await chercherPhotosServeur(q)).filter(u => !essayes.has(u));
+        if(!file.length) return null;
+      }
+      const u = file.shift(); essayes.add(u);
+      if(await testerImage(u)) return u;
+    }
+  }
+  function afficher(url){
+    courante = url; fr.innerHTML = "";
+    const img = document.createElement("img"); img.alt = q || "image"; img.src = url; img.referrerPolicy = "no-referrer";
+    const bar = document.createElement("div"); bar.className = "img-bar";
+    const dl = document.createElement("button"); dl.textContent = "⬇ Télécharger"; dl.onclick = () => telechargerImageUrl(courante, dl);
+    bar.append(dl);
+    if(q){
+      const autre = document.createElement("button"); autre.textContent = "🔄 Autre image";
+      autre.onclick = async () => {
+        autre.disabled = true; autre.textContent = "…";
+        const u = await suivante();
+        if(u){ afficher(u); } else { autre.textContent = "Plus d'autre image"; }
+      };
+      bar.append(autre);
+    }
+    fr.append(img, bar);
+  }
+  const u = await suivante();
+  if(u) afficher(u);
+  else fr.innerHTML = '<div class="img-load">Aucune image trouvée' + (q ? ' pour « ' + escHtml(q) + ' »' : '') + '.</div>';
+}
+function resoudreImages(racine){ racine.querySelectorAll(".img-frame[data-q]:not([data-fait])").forEach(fr => { resoudreImage(fr); }); }
+
 function remplirMsg(d, texte){
   d.dataset.raw = texte;
   const s = d.querySelector(".txt"); s.textContent = ""; s.innerHTML = "";
@@ -1315,12 +1395,13 @@ function remplirMsg(d, texte){
     tousSegs.forEach(seg => {
       if(seg.t === "texte"){
         const v = seg.v.trim();
-        if(v){ const div = document.createElement("div"); div.className = "md"; div.innerHTML = renduMarkdown(v); s.appendChild(div); }
+        if(v){ const div = document.createElement("div"); div.className = "md"; div.innerHTML = renduMarkdown(v); s.appendChild(div); resoudreImages(div); }
       }else s.appendChild(carteFichier(seg, segsCode));
     });
   }else if(d.classList.contains("ai")){
     s.innerHTML = renduMarkdown(texte);
     s.className = "txt md";
+    resoudreImages(s);
   }else{
     s.textContent = texte;
   }
@@ -1336,8 +1417,8 @@ function afficherMsg(type, texte){
     const a=document.createElement('div'); a.className = "actions";
     const c=document.createElement('button'); c.className = "act-btn"; c.textContent = "📋 Copier";
     const p=document.createElement('button'); p.className = "act-btn"; p.textContent = "📤 Partager";
-    c.onclick = () => copierTexte(d.dataset.raw, c);
-    p.onclick = () => partagerTexte(d.dataset.raw, p);
+    c.onclick = () => copierTexte(d.dataset.raw.replace(/\[\[\s*IMG\s*:[^\]]*\]\]/gi, "").trim(), c);
+    p.onclick = () => partagerTexte(d.dataset.raw.replace(/\[\[\s*IMG\s*:[^\]]*\]\]/gi, "").trim(), p);
     a.append(c, p); d.appendChild(a);
   }
   chat.appendChild(d);
