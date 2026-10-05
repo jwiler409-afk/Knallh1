@@ -1,0 +1,2865 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
+<title>Knall</title>
+<script>
+/* Thème et police appliqués dès le départ : pas d'écran blanc, pas de clignotement */
+var _POLICES={moderne:'-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif',classique:'Georgia,"Iowan Old Style","Noto Serif","Times New Roman",serif',confort:'Verdana,"DejaVu Sans","Trebuchet MS",sans-serif',machine:'ui-monospace,Menlo,Consolas,"Roboto Mono",monospace'};
+var _TAILLES={petit:14,moyen:16,grand:18};
+function _appliquerPolice(p){p=p||{};var r=document.documentElement.style;r.setProperty('--font-msg',_POLICES[p.cat]||_POLICES.classique);r.setProperty('--size-msg',(_TAILLES[p.taille]||16)+'px');}
+try{var _t=localStorage.getItem('knall-theme');document.documentElement.setAttribute('data-theme',_t||'dark');}catch(e){}
+try{_appliquerPolice(JSON.parse(localStorage.getItem('knall-police')||'null'));}catch(e){_appliquerPolice(null);}
+</script>
+<style>
+:root{
+  --bg:#0a0e1f; --bg2:#0e1330; --card:#131a3a; --bubble-ai:#161d40;
+  --text:#eef0ff; --sub:#8b93c4; --accent1:#3fa9f5; --accent2:#a24bf0;
+  --input-bg:#101636; --border:#232a55;
+}
+:root[data-theme="light"]{
+  --bg:#f4f5fb; --bg2:#ffffff; --card:#ffffff; --bubble-ai:#eef0fb;
+  --text:#141832; --sub:#5b6290; --accent1:#2f8de0; --accent2:#8a3ee0;
+  --input-bg:#eef0fb; --border:#dfe2f5;
+}
+@media (prefers-color-scheme: light){
+  :root:not([data-theme="dark"]){
+    --bg:#f4f5fb; --bg2:#ffffff; --card:#ffffff; --bubble-ai:#eef0fb;
+    --text:#141832; --sub:#5b6290; --accent1:#2f8de0; --accent2:#8a3ee0;
+    --input-bg:#eef0fb; --border:#dfe2f5;
+  }
+}
+*{box-sizing:border-box}
+html{background:var(--bg)}
+html,body{height:100%;margin:0;overflow:hidden}
+body{
+  background:var(--bg); color:var(--text);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  display:flex; flex-direction:column; height:100%; height:100dvh;
+}
+header{
+  position:sticky; top:0; padding:calc(10px + env(safe-area-inset-top,0px)) 16px 10px;
+  background:var(--bg2); border-bottom:1px solid var(--border);
+  display:flex; align-items:center; justify-content:space-between; z-index:10;
+}
+.brand{display:flex; align-items:center; gap:10px}
+.brand svg{width:26px;height:26px}
+.brand span{font-weight:700; font-size:19px; letter-spacing:.2px}
+.hdr-actions{display:flex; align-items:center; gap:8px; position:relative}
+.icon-btn{
+  width:36px;height:36px;border-radius:50%; border:1px solid var(--border);
+  background:var(--card); color:var(--text); display:flex; align-items:center;
+  justify-content:center; cursor:pointer; font-size:15px;
+}
+#agentLabel{font-size:12px; color:var(--sub); margin-right:2px; white-space:nowrap}
+.menu{
+  position:absolute; top:44px; right:0; background:var(--card);
+  border:1px solid var(--border); border-radius:14px; padding:6px;
+  min-width:170px; box-shadow:0 12px 30px rgba(0,0,0,.35); display:none; z-index:20;
+}
+.menu.open{display:block}
+.menu button{
+  width:100%; text-align:left; background:none; border:none; color:var(--text);
+  padding:9px 10px; border-radius:9px; font-size:14.5px; cursor:pointer;
+  display:flex; align-items:center; gap:9px;
+}
+.menu button:hover{background:var(--bubble-ai)}
+.menu button.active{color:var(--accent1); font-weight:600}
+main{flex:1; min-height:0; overflow-y:auto; overscroll-behavior:contain; -webkit-overflow-scrolling:touch; padding:16px 14px 20px; display:flex; flex-direction:column; gap:14px}
+.msg{max-width:86%; white-space:pre-wrap; word-break:break-word; padding:11px 15px; border-radius:18px; font-size:15px; line-height:1.5; box-shadow:0 1px 2px rgba(0,0,0,.12)}
+.msg.ai{font-family:var(--font-msg); font-size:var(--size-msg,16px); line-height:1.7; max-width:100%; background:transparent; border:0; box-shadow:none; padding:2px 2px 4px; border-radius:0}
+.msg.user{font-family:var(--font-msg); font-size:calc(var(--size-msg,16px) - 1px)}
+.msg.ai{align-self:stretch}
+.msg.user{align-self:flex-end; background:linear-gradient(135deg,var(--accent1),var(--accent2)); color:#fff; border-bottom-right-radius:5px}
+.msg.pending{opacity:.6; font-style:italic}
+.msg.sys{align-self:center; color:var(--sub); font-size:12.5px; text-align:center}
+.md{white-space:normal}
+.md h2,.md h3,.md h4,.md h5,.md h6{margin:18px 0 8px; line-height:1.3; font-weight:700}
+.md > :first-child{margin-top:0}
+.md h2{font-size:1.28em} .md h3{font-size:1.14em} .md h4,.md h5,.md h6{font-size:1.04em}
+.md p{margin:0 0 12px}
+.md hr{border:0; border-top:1px solid var(--border); margin:16px 0}
+.md blockquote{margin:10px 0; padding:4px 0 4px 14px; border-left:3px solid var(--accent1); color:var(--sub)}
+.md blockquote p{margin:0 0 6px}
+.md ul ul,.md ol ol,.md ul ol,.md ol ul{margin:4px 0}
+.md p:last-child{margin-bottom:0}
+.md strong{font-weight:700} .md em{font-style:italic}
+.md code{background:rgba(128,128,128,.22); padding:1px 5px; border-radius:5px; font-family:ui-monospace,Menlo,Consolas,monospace; font-size:.92em}
+.md ul,.md ol{margin:6px 0 12px; padding-left:24px}
+.md li{margin:5px 0; padding-left:2px}
+.md a{color:var(--accent1); text-decoration:underline; word-break:break-all}
+.img-frame{border:1px solid var(--border); border-radius:14px; overflow:hidden; background:var(--card); margin:8px 0; max-width:100%}
+.img-frame img{display:block; width:100%; max-width:320px; margin:0 auto}
+.img-frame .img-dl{display:block; text-align:center; padding:7px; font-size:12.5px; color:var(--accent1); text-decoration:none; border-top:1px solid var(--border)}
+.img-frame .img-load{padding:22px 12px; text-align:center; font-size:13px; color:var(--sub)}
+.img-frame .img-bar{display:flex; border-top:1px solid var(--border)}
+.img-frame .img-bar button{flex:1; border:0; background:none; font:inherit; font-size:12.5px; padding:8px; color:var(--accent1); cursor:pointer; text-align:center}
+.img-frame .img-bar button+button{border-left:1px solid var(--border)}
+.md .tbl-wrap{overflow-x:auto; margin:8px 0; -webkit-overflow-scrolling:touch}
+.md table{border-collapse:collapse; font-size:13px; min-width:100%}
+.md th,.md td{border:1px solid var(--border); padding:5px 9px; text-align:left; white-space:nowrap}
+.md th{background:rgba(128,128,128,.18); font-weight:700}
+.actions{display:flex; flex-wrap:wrap; gap:8px; margin-top:10px}
+.act-btn{border:1px solid var(--border); background:var(--card); color:var(--text); border-radius:16px; padding:6px 12px; font-size:13px; cursor:pointer}
+.msg.pending .actions{display:none}
+.typing{display:inline-flex; gap:4px; padding:4px 2px}
+.typing span{width:6px;height:6px;border-radius:50%;background:var(--sub);animation:tyBounce 1.2s infinite ease-in-out}
+.typing span:nth-child(2){animation-delay:.15s}
+.typing span:nth-child(3){animation-delay:.3s}
+@keyframes tyBounce{0%,80%,100%{transform:scale(.6);opacity:.4}40%{transform:scale(1);opacity:1}}
+.msg img.gen{max-width:100%; border-radius:12px; display:block; margin-top:4px}
+#fichierChip{display:none; align-items:center; gap:6px; background:var(--card); border:1px solid var(--border);
+  border-radius:12px; padding:5px 10px; font-size:12.5px; margin:0 14px 6px; color:var(--sub)}
+#fichierChip.on{display:flex}
+#fichierChip button{background:none; border:none; color:var(--sub); font-size:13px; cursor:pointer; margin-left:auto}
+.fichier{margin:8px 0; border:1px solid var(--border); border-radius:12px; background:var(--card); padding:8px 10px; white-space:normal}
+.fichier .nom{font-weight:600; font-size:13.5px; word-break:break-all}
+.fichier .meta{color:var(--sub); font-size:12px; margin:2px 0 8px}
+.fichier .btns{display:flex; gap:6px; flex-wrap:wrap}
+#viewer{position:fixed; inset:0; z-index:100; background:#1e1e1e; color:#d4d4d4; display:none; flex-direction:column}
+#viewer.open{display:flex}
+#modeBar{display:flex; flex-direction:column; gap:4px}
+#modeBar .hint{margin:0 0 8px 6px; font-size:12px; color:var(--sub)}
+#modeBar .pill{width:100%; text-align:left; border:1px solid var(--border); background:var(--card); color:var(--text); border-radius:12px; padding:11px 14px; font-size:14.5px; cursor:pointer}
+#modeBar .pill.on{border-color:#3fb37f; box-shadow:0 0 0 1px #3fb37f inset}
+#modeBar .pill.off{opacity:.65}
+#modeBar .pill:disabled{opacity:.45; cursor:default}
+#apercu{position:fixed; inset:0; z-index:110; background:#fff; display:none; flex-direction:column}
+#apercu.open{display:flex}
+#apercuBar{display:flex; align-items:center; gap:6px; padding:10px 12px; background:#2d2d2d; color:#fff; padding-top:max(10px, env(safe-area-inset-top))}
+#apercuNom{flex:1; font-family:ui-monospace,Menlo,Consolas,monospace; font-size:13px; word-break:break-all}
+#apercuBar .act-btn{background:#3c3c3c; color:#fff; border-color:#555}
+#apercuFrame{flex:1; width:100%; border:0; background:#fff}
+#viewerBar{display:flex; align-items:center; gap:8px; padding:10px 12px; background:#2d2d2d; color:#fff; padding-top:max(10px, env(safe-area-inset-top))}
+#viewerNom{flex:1; font-family:ui-monospace,Menlo,Consolas,monospace; font-size:13.5px; word-break:break-all}
+#viewerBar .lock{font-size:11.5px; color:#9cdcfe; white-space:nowrap}
+#viewerBar .act-btn{background:#3c3c3c; color:#fff; border-color:#555}
+#viewerCode{flex:1; overflow:auto; margin:0; padding:10px 0 24px; font-family:ui-monospace,Menlo,Consolas,monospace; font-size:12.5px; line-height:1.55; -webkit-user-select:text; user-select:text}
+.ligne{display:flex}
+.ligne .num{flex:none; width:46px; text-align:right; padding-right:12px; color:#858585; -webkit-user-select:none; user-select:none}
+.ligne .cod{white-space:pre; padding-right:16px}
+footer{
+  padding:10px 14px calc(6px + env(safe-area-inset-bottom,0px));
+  background:var(--bg2); border-top:1px solid var(--border);
+  display:flex; flex-direction:column; gap:4px;
+  transition:transform .12s ease;
+}
+.footer-row{display:flex; align-items:center; gap:8px}
+#disclaimer{text-align:center; font-size:11px; color:var(--sub); line-height:1.3; padding-top:1px}
+#inputRow{
+  flex:1; display:flex; align-items:center; background:var(--input-bg);
+  border:1px solid var(--border); border-radius:22px; padding:6px 6px 6px 16px;
+}
+#inputRow textarea{flex:1; border:none; background:none; color:var(--text); font-size:14.5px; outline:none; resize:none; max-height:120px; font-family:inherit; line-height:1.4}
+#inputRow textarea::placeholder{color:var(--sub)}
+#sendBtn{
+  width:34px;height:34px;border-radius:50%; border:none; cursor:pointer;
+  background:linear-gradient(135deg,var(--accent1),var(--accent2)); color:#fff;
+  display:flex; align-items:center; justify-content:center; flex-shrink:0;
+}
+
+.brand{user-select:none; -webkit-user-select:none; -webkit-tap-highlight-color:transparent; cursor:default}
+.overlay{position:fixed; inset:0; background:rgba(0,0,0,.55); display:flex; align-items:flex-end; justify-content:center; z-index:50}
+.overlay[hidden]{display:none}
+.sheet{width:100%; max-width:520px; max-height:88%; overflow-y:auto; background:var(--bg2); color:var(--text);
+  border:1px solid var(--border); border-radius:18px 18px 0 0; padding:16px 16px calc(16px + env(safe-area-inset-bottom,0px))}
+.sheet-head{display:flex; align-items:center; justify-content:space-between; margin-bottom:12px}
+.sheet input,.sheet select{width:100%; margin-top:8px; padding:10px 12px; font-size:15px; font-family:inherit;
+  background:var(--input-bg); color:var(--text); border:1px solid var(--border); border-radius:10px}
+.btn{margin-top:10px; padding:10px 14px; border:none; border-radius:10px; font-size:14px; font-weight:600; cursor:pointer;
+  background:linear-gradient(135deg,var(--accent1),var(--accent2)); color:#fff}
+.btn.sec{background:var(--card); color:var(--text); border:1px solid var(--border)}
+.row2{display:flex; gap:8px}
+.row2 .btn{flex:1}
+.hint{font-size:12.5px; color:var(--sub); margin:8px 0 0; min-height:16px}
+.adm-item{border-top:1px solid var(--border); padding:8px 0; font-size:13px}
+.adm-item b{color:var(--accent1)}
+.adm-item button{float:right; background:none; border:none; color:#e0607a; font-size:12px; cursor:pointer}
+.md .kdisp{display:block; margin:8px 0; overflow-x:auto; overflow-y:hidden; -webkit-overflow-scrolling:touch}
+.md .katex{font-size:1.06em}
+.md .katex-display{margin:0}
+#styleBar{display:none; gap:6px; padding:8px 14px 0; overflow-x:auto; background:var(--bg2)}
+#styleBar.on{display:flex}
+#styleBar .pill{flex:none; border:1px solid var(--border); background:var(--card); color:var(--text); border-radius:14px; padding:5px 11px; font-size:12.5px; cursor:pointer; white-space:nowrap}
+#styleBar .pill.on{border-color:var(--accent1); box-shadow:0 0 0 1px var(--accent1) inset; font-weight:600}
+#codeBar{display:none; gap:6px; padding:8px 14px 0; overflow-x:auto; background:var(--bg2); align-items:center}
+#codeBar.on{display:flex}
+#codeBar select{flex:none; border:1px solid var(--border); background:var(--card); color:var(--text); border-radius:14px; padding:5px 8px; font:inherit; font-size:12.5px; max-width:42vw}
+#codeBar .pill{flex:none; border:1px solid var(--border); background:var(--card); color:var(--text); border-radius:14px; padding:5px 11px; font-size:12.5px; cursor:pointer; white-space:nowrap}
+#codeBar .pill.on{border-color:var(--accent1); box-shadow:0 0 0 1px var(--accent1) inset; font-weight:600}
+#galerieGrid{display:grid; grid-template-columns:1fr 1fr; gap:10px}
+.gtile{border:1px solid var(--border); border-radius:12px; padding:6px; background:var(--card)}
+.gtile img{width:100%; border-radius:8px; display:block}
+.gtile .cap{font-size:11.5px; color:var(--sub); margin:5px 0; max-height:2.8em; overflow:hidden}
+.gtile .btns{display:flex; gap:5px}
+/* ---- Cartes de documents (Excel, Word, PDF...) ---- */
+.doc-card{margin:2px 0; border:1px solid var(--border); border-radius:14px; background:var(--card); padding:12px; white-space:normal; min-width:240px}
+.doc-top{display:flex; align-items:center; gap:12px}
+.doc-ico{flex:none; position:relative; width:44px; height:54px; border-radius:7px; background:#6b7280; color:#fff; font-size:11px; font-weight:800; letter-spacing:.3px; display:flex; align-items:flex-end; justify-content:center; padding-bottom:6px}
+.doc-ico::after{content:""; position:absolute; top:0; right:0; width:14px; height:14px; border-bottom-left-radius:5px; background:linear-gradient(225deg,var(--card) 50%,rgba(255,255,255,.4) 50%)}
+.doc-ico.t-xlsx,.doc-ico.t-csv{background:#1d7a46}
+.doc-ico.t-docx{background:#2b5fb4}
+.doc-ico.t-pdf{background:#d1384a}
+.doc-ico.t-html{background:#e0702d}
+.doc-ico.t-json,.doc-ico.t-xml{background:#8a6d1d}
+.doc-nom{font-weight:600; font-size:14px; word-break:break-all}
+.doc-meta{color:var(--sub); font-size:12px; margin-top:2px}
+.doc-resume{font-size:13px; margin-top:10px; line-height:1.4}
+.doc-card .btns{display:flex; gap:6px; flex-wrap:wrap; margin-top:10px}
+.doc-card.work .doc-ico{animation:docBob 1.2s ease-in-out infinite}
+.doc-steps{list-style:none; margin:12px 0 0; padding:0; font-size:12.5px; color:var(--sub)}
+.doc-steps li{display:flex; align-items:center; gap:8px; padding:3px 0}
+.doc-steps li::before{content:""; flex:none; width:10px; height:10px; border-radius:50%; border:2px solid var(--border)}
+.doc-steps li.on{color:var(--text)}
+.doc-steps li.on::before{border-color:var(--accent1); border-top-color:transparent; animation:docSpin .8s linear infinite}
+.doc-steps li.ok::before{background:#3fb37f; border-color:#3fb37f}
+.doc-bar{height:4px; border-radius:4px; background:var(--border); overflow:hidden; margin-top:10px}
+.doc-bar i{display:block; height:100%; width:40%; border-radius:4px; background:linear-gradient(90deg,var(--accent1),var(--accent2)); animation:docSlide 1.3s ease-in-out infinite}
+@keyframes docSpin{to{transform:rotate(360deg)}}
+@keyframes docSlide{0%{transform:translateX(-100%)}100%{transform:translateX(260%)}}
+@keyframes docBob{50%{transform:translateY(-3px)}}
+.icon-btn svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;pointer-events:none}
+#sendBtn svg{width:18px;height:18px;fill:#fff;stroke:none;pointer-events:none}
+#agentLabel{font-weight:600}
+.agent-pill{height:36px; padding:0 11px 0 10px; border-radius:18px; border:1px solid var(--border); background:var(--card); color:var(--text); display:flex; align-items:center; gap:6px; font-size:13.5px; font-weight:600; cursor:pointer; max-width:150px}
+.agent-pill *{pointer-events:none}
+.agent-pill svg{width:16px; height:16px; flex:none; fill:none; stroke:var(--accent1); stroke-width:1.9; stroke-linecap:round; stroke-linejoin:round}
+.agent-pill .chev{stroke:var(--sub); width:14px; height:14px}
+.agent-pill #agentLabel{margin:0; color:var(--text); font-size:13.5px; overflow:hidden; text-overflow:ellipsis}
+footer{position:relative}
+.plus-menu{position:absolute; bottom:calc(100% + 8px); left:14px; display:none; background:var(--card); border:1px solid var(--border); border-radius:14px; padding:6px; min-width:160px; box-shadow:0 -8px 28px rgba(0,0,0,.3); z-index:30}
+.plus-menu.open{display:block}
+.plus-menu button{width:100%; display:flex; align-items:center; gap:10px; background:none; border:none; color:var(--text); padding:11px 12px; border-radius:10px; font-size:14.5px; cursor:pointer; text-align:left}
+.plus-menu button:active{background:var(--bubble-ai)}
+.plus-menu svg{width:19px; height:19px; fill:none; stroke:var(--accent1); stroke-width:1.9; stroke-linecap:round; stroke-linejoin:round}
+#plusBtn{flex:none}
+.hdr-actions{gap:8px}
+.ic{width:1.15em;height:1.15em;flex:none;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.act-btn,#styleBar .pill{display:inline-flex; align-items:center; gap:6px}
+.sheet-head b,.nom,.lock,#fichierNom,#apercuNom{display:inline-flex; align-items:center; gap:7px}
+.set-title{font-size:11.5px; font-weight:700; letter-spacing:.7px; text-transform:uppercase; color:var(--sub); margin:16px 6px 8px}
+.set-title:first-child{margin-top:4px}
+.set-card{background:var(--card); border:1px solid var(--border); border-radius:16px; overflow:hidden}
+.set-card .row{width:100%; display:flex; align-items:center; gap:12px; padding:13px 14px; background:none; border:none; border-bottom:1px solid var(--border); color:var(--text); text-align:left; font:inherit; cursor:pointer}
+.set-card .row:last-child{border-bottom:none}
+.set-card .row:disabled{opacity:.55; cursor:default}
+.set-card .row.info{cursor:default}
+.row .ri{width:36px; height:36px; border-radius:11px; flex:none; display:flex; align-items:center; justify-content:center; background:rgba(63,169,245,.15); color:var(--accent1)}
+.row .ri .ic{width:19px; height:19px}
+.row.danger .ri{background:rgba(229,72,77,.14); color:#e5484d}
+.row .rt{flex:1; min-width:0}
+.row .rt b{display:block; font-size:14.5px; font-weight:600}
+.row .rt small{display:block; font-size:12.3px; line-height:1.35; color:var(--sub); margin-top:2px}
+.row .cnt{font-size:13px; color:var(--sub); font-weight:600}
+.row .val{font-size:13px; color:var(--sub); font-weight:600}
+.sw{width:46px; height:28px; border-radius:14px; background:#9aa0c0; position:relative; flex:none; transition:background .2s}
+.sw::after{content:""; position:absolute; top:3px; left:3px; width:22px; height:22px; border-radius:50%; background:#fff; box-shadow:0 1px 3px rgba(0,0,0,.3); transition:transform .2s}
+.row[aria-checked="true"] .sw{background:linear-gradient(135deg,var(--accent1),var(--accent2))}
+.row[aria-checked="true"] .sw::after{transform:translateX(18px)}
+#accueil{margin:auto; text-align:center; padding:24px 8px; max-width:340px}
+#accueil .logo{width:58px; height:58px; margin:0 auto 14px; border-radius:18px; background:linear-gradient(135deg,var(--accent1),var(--accent2)); display:flex; align-items:center; justify-content:center; color:#fff}
+#accueil .logo .ic{width:30px; height:30px; stroke:none}
+#accueil h2{margin:0 0 6px; font-size:21px}
+#accueil p{margin:0 0 18px; color:var(--sub); font-size:14px; line-height:1.45}
+.chips{display:flex; flex-wrap:wrap; gap:8px; justify-content:center}
+.chip{display:inline-flex; align-items:center; gap:7px; padding:10px 14px; border-radius:18px; border:1px solid var(--border); background:var(--card); color:var(--text); font-size:13.5px; cursor:pointer}
+.chip .ic{color:var(--accent1)}
+main.vide .msg.sys{display:none}
+.mic{width:32px; height:32px; flex:none; border:none; border-radius:50%; background:none; color:var(--sub); display:flex; align-items:center; justify-content:center; cursor:pointer}
+.mic svg{width:19px; height:19px; fill:none; stroke:currentColor; stroke-width:1.9; stroke-linecap:round; stroke-linejoin:round; pointer-events:none}
+.mic.on{background:#e5484d; color:#fff; animation:micPulse 1.2s infinite}
+@keyframes micPulse{50%{box-shadow:0 0 0 7px rgba(229,72,77,.18)}}
+.to-bottom{position:absolute; right:14px; bottom:calc(100% + 10px); width:38px; height:38px; border-radius:50%; border:1px solid var(--border); background:var(--card); color:var(--text); display:none; align-items:center; justify-content:center; box-shadow:0 4px 14px rgba(0,0,0,.25); z-index:20; cursor:pointer}
+.to-bottom.on{display:flex}
+.to-bottom svg{width:20px; height:20px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round}
+.thread-search{width:100%; margin-top:10px; padding:11px 14px; border-radius:12px; border:1px solid var(--border); background:var(--input-bg); color:var(--text); font-size:14.5px; outline:none}
+.th-item{display:flex; align-items:center; gap:8px; padding:12px 8px 12px 14px; margin-top:8px; border:1px solid var(--border); border-radius:14px; background:var(--card); cursor:pointer}
+.th-item.actif{border-color:var(--accent1); box-shadow:0 0 0 1px var(--accent1) inset}
+.th-item .rt{flex:1; min-width:0}
+.th-item b{display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-size:14.5px}
+.th-item small{color:var(--sub); font-size:12.3px}
+.th-item .mini{width:34px; height:34px; flex:none; border:none; border-radius:50%; background:none; color:var(--sub); display:flex; align-items:center; justify-content:center; cursor:pointer}
+.th-item .mini.del{color:#e5484d}
+.th-vide{text-align:center; color:var(--sub); font-size:13.5px; margin:22px 0}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand" id="brand">
+    <svg viewBox="0 0 24 24"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="var(--accent1)"/><stop offset="1" stop-color="var(--accent2)"/>
+    </linearGradient></defs>
+      <path d="M13 2 L7 13 H11 L9 22 L18 9 H13 Z" fill="url(#g)"/>
+    </svg>
+    <span>Knall</span>
+  </div>
+  <div class="hdr-actions">
+    <button class="agent-pill" id="menuBtn" aria-label="Choisir un agent"><svg viewBox="0 0 24 24"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/></svg><span id="agentLabel">Général</span><svg class="chev" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></button>
+    <button class="icon-btn" id="threadsBtn" aria-label="Conversations"><svg viewBox="0 0 24 24"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/></svg></button>
+    <button class="icon-btn" id="settingsBtn" aria-label="Paramètres"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
+    <div class="menu" id="menu">
+      <button data-agent="general" class="active">🤖 Général</button>
+      <button data-agent="taches">🗂️ Tâches</button>
+      <button data-agent="code">💻 Code</button>
+      <button data-agent="recherche">🔍 Recherche</button>
+      <button data-agent="redaction">✍️ Rédaction</button>
+      <button data-agent="image">🎨 Image</button>
+    </div>
+  </div>
+</header>
+<main id="chat"></main>
+<div id="fichierChip"><img id="fichierMini" alt="" style="display:none;width:30px;height:30px;border-radius:6px;object-fit:cover"><span id="fichierNom"></span><button id="fichierX">✕</button></div>
+<div id="styleBar"></div>
+<div id="codeBar"></div>
+<footer>
+<div class="footer-row">
+  <button class="icon-btn" id="plusBtn" aria-label="Ajouter"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
+  <div class="plus-menu" id="plusMenu">
+    <button id="attachBtn"><svg viewBox="0 0 24 24"><path d="M21 11.5l-8.6 8.6a5.5 5.5 0 0 1-7.8-7.8l8.6-8.6a3.7 3.7 0 0 1 5.2 5.2l-8.6 8.6a1.8 1.8 0 0 1-2.6-2.6l7.9-7.9"/></svg>Fichier</button>
+    <button id="camBtn"><svg viewBox="0 0 24 24"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>Photo</button>
+  </div>
+  <input type="file" id="camInput" accept="image/*" capture="environment" hidden>
+  <input type="file" id="fileInput" hidden>
+  <div id="inputRow">
+    <textarea id="msgInput" rows="1" placeholder="Écrivez un message..."></textarea>
+    <button class="mic" id="liveBtn" aria-label="Conversation vocale"><svg class="ic" viewBox="0 0 24 24"><path d="M4 11v2M8 8v8M12 4v16M16 8v8M20 11v2"/></svg></button>
+    <button class="mic" id="micBtn" aria-label="Dicter"><svg class="ic" viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></button>
+  </div>
+  <button class="to-bottom" id="toBottom" aria-label="Aller en bas"><svg class="ic" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></button>
+  <button id="sendBtn"><svg viewBox="0 0 24 24"><path d="M3.4 20.4l17.4-8a.5.5 0 0 0 0-.9l-17.4-8a.5.5 0 0 0-.7.6L5 10.5l9 1.5-9 1.5-2.3 6.3a.5.5 0 0 0 .7.6z"/></svg></button>
+</div>
+<div id="disclaimer">Knall est une IA et peut faire des erreurs.</div>
+</footer>
+
+<div id="threads" class="overlay" hidden>
+  <div class="sheet">
+    <div class="sheet-head"><b>Conversations</b><button class="icon-btn" id="threadsClose" aria-label="Fermer">✕</button></div>
+    <button class="btn" id="newThreadBtn">+ Nouvelle conversation</button>
+    <input class="thread-search" id="threadSearch" placeholder="Chercher une conversation…" autocomplete="off">
+    <div id="threadsList"></div>
+  </div>
+</div>
+
+<div id="reglages" class="overlay" hidden>
+  <div class="sheet">
+    <div class="sheet-head"><b><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"/></svg>Paramètres</b><button class="icon-btn" id="reglagesClose" aria-label="Fermer">✕</button></div>
+    <div id="modeBar">
+      <div class="set-title">Connexion</div>
+      <div class="set-card">
+<button class="row" id="modeNet" role="switch" aria-checked="false"><span class="ri"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg></span><span class="rt"><b>Connexion internet</b><small id="hNet"></small></span><span class="sw"></span></button>
+<button class="row" id="modeBase" role="switch" aria-checked="false"><span class="ri"><svg class="ic" viewBox="0 0 24 24"><path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v16H6.5A2.5 2.5 0 0 0 4 20.5z"/><path d="M4 20.5A1.5 1.5 0 0 0 5.5 22H20"/></svg></span><span class="rt"><b>Ma base locale</b><small id="hBase"></small></span><span class="sw"></span></button>
+      </div>
+      <div class="set-title">Mémoire</div>
+      <div class="set-card">
+<button class="row" id="modeApprend" role="switch" aria-checked="false"><span class="ri"><svg class="ic" viewBox="0 0 24 24"><path d="M5 3h11l3 3v13a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M7 3v5h8V3M7 21v-7h10v7"/></svg></span><span class="rt"><b>Garder les réponses</b><small>Les réponses du serveur sont gardées sur ce téléphone.</small></span><span class="sw"></span></button>
+<button class="row" id="modeSync" role="switch" aria-checked="false"><span class="ri"><svg class="ic" viewBox="0 0 24 24"><path d="M17.5 17.5a4 4 0 0 0 .5-8A6 6 0 0 0 6.4 8.9 4.6 4.6 0 0 0 7 18"/><path d="M12 12v8M9 17l3 3 3-3"/></svg></span><span class="rt"><b>Connaissances partagées</b><small>Reçoit les connaissances ajoutées ailleurs.</small></span><span class="sw"></span></button>
+      </div>
+      <div class="set-title">Stockage</div>
+      <div class="set-card">
+        <div class="row info"><span class="ri"><svg class="ic" viewBox="0 0 24 24"><ellipse cx="12" cy="6" rx="8" ry="3"/><path d="M4 6v6c0 1.7 3.6 3 8 3s8-1.3 8-3V6M4 12v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/></svg></span><span class="rt"><b>Sur ce téléphone</b><small id="stockInfo"></small></span></div>
+<button class="row danger" id="viderAppris"><span class="ri"><svg class="ic" viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-13M9 7V4h6v3"/></svg></span><span class="rt"><b>Vider les réponses apprises</b><small>Tes propres ajouts (admin) ne sont pas touchés.</small></span><span class="cnt" id="cntAppris">0</span></button>
+<button class="row danger" id="viderMedia"><span class="ri"><svg class="ic" viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-13M9 7V4h6v3"/></svg></span><span class="rt"><b>Vider images et musiques</b><small>Gardées sur le téléphone, hors conversation.</small></span><span class="cnt" id="cntMedia">0</span></button>
+      </div>
+      <div class="set-title">Voix</div>
+      <div class="set-card">
+        <button class="row" id="voixVitesse"><span class="ri"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="13" r="8"/><path d="M12 13l4-4M9 3h6"/></svg></span><span class="rt"><b>Vitesse de lecture</b><small>Pour le bouton Écouter.</small></span><span class="val" id="vitVal"></span></button>
+        <button class="row" id="voixDictee"><span class="ri"><svg class="ic" viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></span><span class="rt"><b>Langue de dictée</b><small>Pour le micro du message.</small></span><span class="val" id="dicVal"></span></button>
+      </div>
+      <div class="set-title">Apparence</div>
+      <div class="set-card">
+<button class="row" id="themeBtn"><span class="ri"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 3v18a9 9 0 0 0 0-18z" fill="currentColor"/></svg></span><span class="rt"><b>Thème</b><small>Passer entre clair et sombre.</small></span><span class="val" id="themeVal"></span></button>
+<button class="row" id="policeBtn"><span class="ri"><svg class="ic" viewBox="0 0 24 24"><path d="M4 20 10 5l6 15M6.5 14h7M16 20l3-8 2 8M17 18h4"/></svg></span><span class="rt"><b>Police du texte</b><small id="policeVal"></small></span></button>
+<button class="row" id="kbBtn"><span class="ri"><svg class="ic" viewBox="0 0 24 24"><path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2zM4 19V5M9 7h6M9 11h6"/></svg></span><span class="rt"><b>Connaissances</b><small>Voir ce que Knall a chargé pour chaque agent.</small></span></button>
+<button class="row" id="voixBtn"><span class="ri"><svg class="ic" viewBox="0 0 24 24"><path d="M11 5 6 9H3v6h3l5 4zM15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/></svg></span><span class="rt"><b>Voix de lecture</b><small id="voixVal"></small></span></button>
+<button class="row" id="notifBtn"><span class="ri"><svg class="ic" viewBox="0 0 24 24"><path d="M6 17V11a6 6 0 1 1 12 0v6l1.5 2h-15zM10 21a2 2 0 0 0 4 0"/></svg></span><span class="rt"><b>Notifications</b><small id="notifVal">Recevoir une alerte quand une réponse est prête.</small></span></button>
+<button class="row" id="guideBtn"><span class="ri"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.4-1 .9-1 1.7M12 17h.01"/></svg></span><span class="rt"><b>Guide d'utilisation</b><small>Revoir les étapes pour bien utiliser Knall.</small></span></button>
+<button class="row" id="signalBtn"><span class="ri"><svg class="ic" viewBox="0 0 24 24"><path d="M4 21V4M4 5h13l-2 4 2 4H4"/></svg></span><span class="rt"><b>Signaler un problème</b><small>Envoyer un message au créateur (ta conversation n'est pas envoyée).</small></span></button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="admin" class="overlay" hidden>
+  <div class="sheet">
+    <div class="sheet-head"><b>Menu admin</b><button class="icon-btn" id="adminClose" aria-label="Fermer">✕</button></div>
+    <div id="pinView">
+      <input id="pin" type="password" inputmode="numeric" maxlength="6" placeholder="Code" autocomplete="off">
+      <button class="btn" id="pinOk">Ouvrir</button>
+      <p class="hint" id="pinMsg"></p>
+    </div>
+    <div id="adminView" hidden>
+      <select id="admAgent">
+        <option value="general">Agent : Général</option>
+        <option value="taches">Agent : Tâches</option>
+        <option value="code">Agent : Code</option>
+        <option value="recherche">Agent : Recherche</option>
+        <option value="redaction">Agent : Rédaction</option>
+      </select>
+      <input id="admQ" placeholder="Question">
+      <input id="admR" placeholder="Réponse">
+      <input id="admT" placeholder="Tags séparés par des virgules (facultatif)">
+      <button class="btn" id="admAdd">Ajouter</button>
+      <p class="hint" id="admMsg"></p>
+      <div class="row2">
+        <button class="btn sec" id="admExport">Exporter .json</button>
+        <button class="btn sec" id="admImportBtn">Importer .json</button>
+      </div>
+      <input type="file" id="admFile" accept=".json,application/json" hidden>
+      <button class="btn sec" id="admTest">Tester les API</button>
+      <pre class="hint" id="admTestOut" style="white-space:pre-wrap"></pre>
+      <p class="hint" id="admCount"></p>
+      <div id="admList"></div>
+    </div>
+  </div>
+</div>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+<div id="galerie" class="overlay" hidden>
+  <div class="sheet">
+    <div class="sheet-head"><b>🖼️ Mes images</b><button class="icon-btn" id="galerieClose" aria-label="Fermer">✕</button></div>
+    <p class="hint" id="galerieVide" hidden>Aucune image pour le moment. Décris-en une pour commencer.</p>
+    <div id="galerieGrid"></div>
+  </div>
+</div>
+<script>
+/* ---- Firebase : konesans admin yo pataje ant tout aparèy, konvèsasyon rete lokal ---- */
+const firebaseConfig = {
+  apiKey: "AIzaSyDVcE23SZKF941Q9AI31vpwJRt1aw1QWQo",
+  authDomain: "knall-b14e6.firebaseapp.com",
+  databaseURL: "https://knall-b14e6-default-rtdb.firebaseio.com",
+  projectId: "knall-b14e6",
+  storageBucket: "knall-b14e6.firebasestorage.app",
+  messagingSenderId: "259374045941",
+  appId: "1:259374045941:web:4ab884c3d967dda34343bc",
+  measurementId: "G-L9387S88T6"
+};
+let db = null, fbPret = false;
+try{
+  firebase.initializeApp(firebaseConfig);
+  db = firebase.firestore();
+  firebase.auth().signInAnonymously().then(() => { fbPret = true; synchroniserConnaissances(); }).catch(e => console.error("Firebase auth:", e.message));
+}catch(e){ console.error("Firebase init:", e.message); }
+
+// Anvoye yon konesans nouvo bay tout aparèy
+async function pousseConnaissanceFirebase(agent, item){
+  if(!db) return;
+  try{ await db.collection("knowledge").doc(agent).collection("items").doc(item.id).set(item); }
+  catch(e){ console.error("Firebase push:", e.message); }
+}
+// Rale konesans lòt moun te ajoute, mete yo nan KB si yo poko la
+async function synchroniserConnaissances(){
+  if(!db) return;
+  try{ if(localStorage.getItem("knall-sync") === "0") return; }catch(e){}
+  for(const agent of Object.keys(KB)){
+    try{
+      const snap = await db.collection("knowledge").doc(agent).collection("items").get();
+      const connus = new Set(KB[agent].map(x => x.id));
+      snap.forEach(doc => { if(!connus.has(doc.id)) KB[agent].push(doc.data()); });
+    }catch(e){ console.error("Firebase sync " + agent + ":", e.message); }
+  }
+}
+</script>
+<script>
+/* ---- Configuration du serveur relais (Render) ---- */
+const PROXY_URL = "https://knall-1.onrender.com";
+const APP_TOKEN = "Knall2026SecretXk9";
+const $ = id => document.getElementById(id);
+// Identifiant aléatoire de cet appareil (aucune identité) : sert seulement à la limite d'images par jour
+const ID_APPAREIL = (() => { try{ let v = localStorage.getItem("knall-device"); if(!v){ v = (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : (Date.now().toString(36) + Math.random().toString(36).slice(2)); localStorage.setItem("knall-device", v); } return v; }catch(e){ return ""; } })();
+const _lire = (k, d) => { try{ const v = localStorage.getItem(k); return v === null ? d : v === "1"; }catch(e){ return d; } };
+let MODE_EN_LIGNE = _lire("knall-online", true);   // true = avec internet, false = sans connexion (base locale seulement)
+let BASE_LOCALE = _lire("knall-base", true);       // ma propre recherche (base locale) ON/OFF
+let APPRENDRE = _lire("knall-apprendre", true); // sauvegarde les reponses du serveur dans la base locale (reglable)
+
+/* ---- Bases de connaissances locales, chargees depuis des fichiers JSON (un par agent) ---- */
+let KB = {general:[], taches:[], code:[], recherche:[], redaction:[]};
+/* Connaissances intégrées : servent si le dossier knowledge/ n'est pas sur le site */
+const KB_INTEGREE = {"code": [{"id": "c001", "question": "comment faire une fonction en javascript", "reponse": "Voici un exemple de fonction :\n```javascript fonction.js\nfunction nom(param) {\n  return param;\n}\n```\nOn écrit le mot function, un nom, des paramètres entre parenthèses, puis le code entre accolades.", "tags": ["javascript", "fonction", "code"]}, {"id": "c002", "question": "comment centrer une div en css", "reponse": "Mets ceci sur le parent :\n```css centrer.css\n.parent {\n  display: flex;\n  justify-content: center;\n  align-items: center;\n}\n```", "tags": ["css", "centrer", "div"]}, {"id": "c003", "question": "comment faire une page html simple", "reponse": "Voici une page HTML de base :\n```html page.html\n<!DOCTYPE html>\n<html lang=\"fr\">\n<head>\n  <meta charset=\"UTF-8\">\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n  <title>Ma page<\/title>\n<\/head>\n<body>\n  <h1>Bonjour<\/h1>\n  <a href=\"https://exemple.com\">Un lien<\/a>\n<\/body>\n<\/html>\n```", "tags": ["html", "page", "site", "base", "lien"]}], "general": [{"id": "g001", "question": "idée de repas rapide et sain", "reponse": "Bol de quinoa au poulet et légumes : quinoa, poulet grillé, avocat, tomates, concombre, sauce au citron.", "tags": ["repas", "cuisine", "manger"]}, {"id": "g002", "question": "comment redémarrer l'application", "reponse": "Ferme complètement Knall puis rouvre-le depuis l'icône.", "tags": ["redemarrer", "bug", "probleme"]}, {"id": "g003", "question": "qui es-tu", "reponse": "Je suis Knall, ton assistant qui fonctionne avec ou sans connexion internet.", "tags": ["knall", "qui", "identite"]}], "recherche": [{"id": "r001", "question": "meteo", "reponse": "La recherche web nécessite une connexion internet active.", "tags": ["meteo", "internet", "recherche"]}], "redaction": [{"id": "d001", "question": "comment faire une introduction", "reponse": "Une introduction a 4 temps : 1) accroche, 2) présentation du sujet, 3) problématique, 4) annonce du plan.", "tags": ["introduction", "dissertation", "plan"]}, {"id": "d002", "question": "comment faire une conclusion", "reponse": "Une conclusion a 2 temps : 1) bilan qui répond à la problématique, 2) ouverture vers une question proche.", "tags": ["conclusion", "dissertation"]}, {"id": "d003", "question": "connecteurs logiques", "reponse": "Addition : de plus, en outre. Opposition : cependant, pourtant. Cause : car, en effet. Conséquence : donc, ainsi. Conclusion : enfin, en somme.", "tags": ["connecteurs", "liaison", "mots"]}, {"id": "d004", "question": "quelle est la difference entre argument et exemple", "reponse": "L'argument est la raison qui appuie ton idée. L'exemple est le fait précis qui prouve cet argument.", "tags": ["argument", "exemple", "difference"]}], "taches": [{"id": "t001", "question": "créer un rappel", "reponse": "Dis-moi quoi et à quelle heure, ex: 'rappelle-moi d'appeler Marc à 15h'.", "tags": ["rappel", "reminder", "heure"]}, {"id": "t002", "question": "liste de mes tâches", "reponse": "Tu n'as aucune tâche enregistrée pour le moment.", "tags": ["taches", "liste", "todo"]}]};
+/* Même numéro (id) mais question différente : le numéro est changé automatiquement (g010 -> g010-2, g010-3…). Même question : mise à jour. */
+const memeQuestion = (a, b) => norm(String(a || "")).replace(/\s+/g, " ").trim() === norm(String(b || "")).replace(/\s+/g, " ").trim();
+function idLibre(id, pris){ let n = 2; while(pris(id + "-" + n)) n++; return id + "-" + n; }
+/* ---- Chargement des connaissances : accepte plusieurs formats de fichiers JSON ---- */
+const KB_ETAT = {};   // agent -> {index, fichiers:[{nom, ok, n, msg}]}  (affiché dans Paramètres > Connaissances)
+const CLES_Q = ["question","q","demande","input","prompt","mot","word","terme","term","titre","title","sujet","clef","cle"];
+const CLES_R = ["reponse","réponse","answer","response","r","a","output","completion","definition","définition","def","explication","contenu","content","texte","text","description","valeur","value"];
+function premierTexte(o, cles){
+  for(const k of cles){
+    let v = o[k];
+    if(Array.isArray(v)) v = v.map(x => typeof x === "string" ? x : (x && (x.definition || x.texte || x.text)) || "").filter(Boolean).join("\n");
+    else if(v && typeof v === "object") v = v.definition || v.texte || v.text || "";
+    if(typeof v === "string" && v.trim()) return v.trim();
+  }
+  return null;
+}
+function normaliserItems(data){
+  if(typeof data === "string") return [];
+  if(!Array.isArray(data) && data && typeof data === "object"){
+    const liste = ["entries","entrees","entrées","data","items","connaissances","knowledge","faq","dictionnaire","dictionary"].map(k => data[k]).find(Array.isArray);
+    if(liste) data = liste;
+    else{   // dictionnaire {"mot": "définition", ...}
+      return Object.keys(data).map(k => {
+        const v = data[k], r = typeof v === "string" ? v : (v && typeof v === "object" ? premierTexte(v, CLES_R) : null);
+        return r ? {question: k, reponse: r, tags: [k]} : null;
+      }).filter(Boolean);
+    }
+  }
+  if(!Array.isArray(data)) return [];
+  return data.map(it => {
+    if(!it || typeof it !== "object") return null;
+    const q = premierTexte(it, CLES_Q), r = premierTexte(it, CLES_R);
+    if(!q || !r) return null;
+    const tags = Array.isArray(it.tags) ? it.tags.filter(t => typeof t === "string") : (typeof it.tags === "string" ? it.tags.split(/[,;]/).map(x => x.trim()).filter(Boolean) : []);
+    return {id: it.id != null ? String(it.id) : null, question: q, reponse: r, tags};
+  }).filter(Boolean);
+}
+async function lireJSON(url){
+  const res = await fetch(url, {cache: "no-store"});
+  if(!res.ok) throw new Error("introuvable (" + res.status + ")");
+  const txt = (await res.text()).replace(/^\uFEFF/, "");
+  try{ return JSON.parse(txt); }catch(e){ throw new Error("JSON invalide : " + e.message.slice(0, 60)); }
+}
+async function chargerKB(){
+  // Chaque agent a son dossier : knowledge/<agent>/ avec index.json (liste des fichiers) + fichiers .json
+  for(const agent of Object.keys(KB)){
+    const base = "knowledge/" + agent + "/", etat = KB_ETAT[agent] = {index: "", fichiers: []};
+    let fichiers = [];
+    try{
+      const liste = await lireJSON(base + "index.json");
+      if(!Array.isArray(liste)) throw new Error("doit être une liste, ex. [\"base.json\"]");
+      fichiers = liste.filter(f => typeof f === "string").map(f => base + f.trim());
+      etat.index = "index.json : " + liste.length + " fichier(s) listé(s)";
+    }catch(e){ etat.index = "index.json : " + e.message; console.error("Index KB " + agent + ":", e.message); }
+    if(!fichiers.length) fichiers = ["knowledge/" + agent + ".json"]; // ancien format (un seul fichier)
+    const parId = new Map();   // même id : la dernière entrée remplace l'ancienne (mise à jour)
+    for(const f of fichiers){
+      const nom = f.split("/").pop();
+      try{
+        const items = normaliserItems(await lireJSON(f));
+        if(!items.length) throw new Error("aucune entrée reconnue (il faut question + réponse)");
+        items.forEach((it, i) => {
+          let id = String(it.id || (agent + "-" + nom + "-" + i));
+          const ex = parId.get(id);
+          if(ex && !memeQuestion(ex.question, it.question)) id = idLibre(id, x => parId.has(x));   // autre question : nouveau numéro
+          parId.set(id, {id, question: it.question, reponse: it.reponse, tags: it.tags});
+        });
+        etat.fichiers.push({nom, ok: true, n: items.length});
+      }catch(e){ etat.fichiers.push({nom, ok: false, msg: e.message}); console.error("Chargement KB " + f + ":", e.message); }
+    }
+    KB[agent].push(...parId.values());
+    if(!KB[agent].length && KB_INTEGREE[agent]){ KB[agent].push(...KB_INTEGREE[agent]); etat.secours = true; } // fichiers introuvables : connaissances intégrées
+  }
+}
+function ouvrirDiagnosticKB(){
+  const ov = document.createElement("div"); ov.className = "overlay"; ov.style.zIndex = 80;
+  ov.innerHTML = '<div class="sheet" style="padding:20px 18px;max-height:88vh;overflow-y:auto"><div style="font-size:18px;font-weight:700;margin-bottom:10px">Connaissances chargées</div><div id="dZone" style="font-size:14px;line-height:1.55"></div><button id="dOk" style="width:100%;margin-top:16px;border:0;border-radius:14px;padding:12px;color:#fff;font:inherit;font-weight:600;background:linear-gradient(135deg,var(--accent1),var(--accent2))">Fermer</button></div>';
+  document.body.appendChild(ov);
+  const z = ov.querySelector("#dZone");
+  Object.keys(KB).forEach(ag => {
+    const e = KB_ETAT[ag] || {index: "", fichiers: []}, bloc = document.createElement("div"); bloc.style.marginBottom = "12px";
+    const t = document.createElement("div"); t.style.fontWeight = "700"; t.textContent = (NOMS[ag] || ag) + " : " + KB[ag].length + " entrée(s)" + (e.secours ? " (connaissances de secours)" : ""); bloc.appendChild(t);
+    const l = (txt, bad) => { const d = document.createElement("div"); d.style.cssText = "font-size:13px;opacity:" + (bad ? "1" : ".75") + ";" + (bad ? "color:#e5484d" : ""); d.textContent = txt; bloc.appendChild(d); };
+    if(e.index) l(e.index, /introuvable|invalide|doit/.test(e.index));
+    e.fichiers.forEach(f => l((f.ok ? "OK  " : "ERREUR  ") + f.nom + (f.ok ? " : " + f.n + " entrées" : " : " + f.msg), !f.ok));
+    z.appendChild(bloc);
+  });
+  ov.querySelector("#dOk").onclick = () => ov.remove();
+}
+const NOMS = {general:"Général", taches:"Tâches", code:"Code", recherche:"Recherche", redaction:"Rédaction", image:"Image"};
+let agentActif = "general";
+
+/* ---- Fils de conversation : chaque paj gen son tit ak son istwa a li ---- */
+let threads = [];
+let threadId = null;
+function nouvelId(){ return "th" + Date.now() + Math.floor(Math.random()*1000); }
+function videHist(){ return {general:[], taches:[], code:[], recherche:[], redaction:[], image:[]}; }
+function chargerThreads(){
+  try{ threads = JSON.parse(localStorage.getItem('knall-threads') || '[]'); }catch(e){ threads = []; }
+  if(!threads.length){
+    threads = [{id: nouvelId(), titre: "Nouvo konvèsasyon", agent: "general", vues: [], hist: videHist()}];
+  }
+}
+function sauverThreads(){ try{ localStorage.setItem('knall-threads', JSON.stringify(threads)); }catch(e){} }
+function threadActif(){ return threads.find(t => t.id === threadId) || threads[0]; }
+const hist = new Proxy({}, { get: (_, agent) => { const h = threadActif().hist; return h[agent] || (h[agent] = []); } }); // compatibilite avec appelerServeur
+
+function nouvelleConversation(){
+  const t = {id: nouvelId(), titre: "Nouvo konvèsasyon", agent: agentActif, vues: [], hist: videHist()};
+  threads.unshift(t); threadId = t.id; sauverThreads();
+  ouvrirConversation(t.id);
+  fermerThreads();
+}
+function ouvrirConversation(id){
+  threadId = id;
+  try{ localStorage.setItem('knall-dernier-fil', id); }catch(e){}
+  const t = threadActif();
+  agentActif = t.agent;
+  agentLabel.textContent = NOMS[agentActif]; majBarreImage();
+  menu.querySelectorAll('button').forEach(x => x.classList.toggle('active', x.dataset.agent === agentActif));
+  chat.innerHTML = '';
+  t.vues.forEach(m => m.media ? afficherMedia(m) : afficherMsg(m.type, m.texte));
+  if(!t.vues.length) ajouterMsg("sys", "Agent actif : " + NOMS[agentActif]);
+}
+function renommerSiPremier(texte){
+  const t = threadActif();
+  if(t.titre === "Nouvo konvèsasyon"){ t.titre = texte.slice(0, 40) + (texte.length > 40 ? "…" : ""); sauverThreads(); }
+}
+function renderThreadsList(){
+  const liste = document.getElementById('threadsList');
+  const sans = s => String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+  const q = sans(document.getElementById('threadSearch').value.trim());
+  liste.innerHTML = '';
+  const trouves = threads.filter(t => !q || sans(t.titre).includes(q) || t.vues.some(m => sans(m.texte).includes(q)));
+  if(!trouves.length){ liste.innerHTML = '<div class="th-vide">Aucune conversation trouvée.</div>'; return; }
+  trouves.forEach(t => {
+    const d = document.createElement('div'); d.className = 'th-item' + (t.id === threadId ? ' actif' : '');
+    const n = t.vues.filter(m => m.type === 'user').length;
+    const rt = document.createElement('div'); rt.className = 'rt';
+    const titre = document.createElement('b'); titre.textContent = t.titre;
+    const sous = document.createElement('small'); sous.textContent = NOMS[t.agent] + ' · ' + n + ' question' + (n > 1 ? 's' : '');
+    rt.append(titre, sous);
+    const ren = document.createElement('button'); ren.className = 'mini'; ren.setAttribute('aria-label', 'Renommer'); ren.innerHTML = svgIcone('pencil');
+    ren.onclick = ev => {
+      ev.stopPropagation();
+      const nv = prompt('Nouveau nom de la conversation', t.titre);
+      if(nv && nv.trim()){ t.titre = nv.trim().slice(0, 60); sauverThreads(); renderThreadsList(); }
+    };
+    const del = document.createElement('button'); del.className = 'mini del'; del.setAttribute('aria-label', 'Supprimer'); del.innerHTML = svgIcone('trash');
+    del.onclick = ev => {
+      ev.stopPropagation();
+      if(!confirm('Supprimer cette conversation ?')) return;
+      threads = threads.filter(x => x.id !== t.id);
+      if(!threads.length) threads = [{id: nouvelId(), titre: "Nouvo konvèsasyon", agent: "general", vues: [], hist: videHist()}];
+      sauverThreads();
+      if(t.id === threadId) ouvrirConversation(threads[0].id);
+      renderThreadsList();
+    };
+    d.append(rt, ren, del);
+    d.onclick = () => { ouvrirConversation(t.id); fermerThreads(); };
+    liste.appendChild(d);
+  });
+}
+function ouvrirThreads(){ document.getElementById('threadSearch').value = ''; renderThreadsList(); document.getElementById('threads').hidden = false; }
+function fermerThreads(){ document.getElementById('threads').hidden = true; }
+document.getElementById('threadsBtn').onclick = ouvrirThreads;
+document.getElementById('threadsClose').onclick = fermerThreads;
+document.getElementById('threads').addEventListener('click', e => { if(e.target.id === 'threads') fermerThreads(); });
+document.getElementById('newThreadBtn').onclick = nouvelleConversation;
+
+/* ---- Connaissances apprises (gardees sur l'appareil) ---- */
+function chargerAppris(){
+  try{
+    const a = JSON.parse(localStorage.getItem('knall-appris') || '{}');
+    let change = false;
+    for(const k in a){
+      if(!KB[k]) continue;
+      a[k].forEach(it => {
+        const i = KB[k].findIndex(x => String(x.id) === String(it.id));
+        if(i >= 0 && memeQuestion(KB[k][i].question, it.question)) KB[k][i] = it;      // même question : mise à jour
+        else{
+          if(i >= 0){ it.id = idLibre(String(it.id), x => KB[k].some(y => String(y.id) === x)); change = true; }   // autre question : nouveau numéro
+          KB[k].push(it);
+        }
+      });
+    }
+    if(change) localStorage.setItem('knall-appris', JSON.stringify(a));
+  }catch(e){}
+}
+function sauverAppris(agent, q, r){
+  const item = {id:"auto"+Date.now(), question:q, reponse:r, tags:[]};
+  KB[agent].push(item);
+  try{
+    const a = JSON.parse(localStorage.getItem('knall-appris') || '{}');
+    (a[agent] = a[agent] || []).push(item);
+    localStorage.setItem('knall-appris', JSON.stringify(a));
+  }catch(e){}
+}
+/* ---- MOTEUR (recherche + rédaction, 100% hors ligne) ---- */
+const norm = s => s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
+const STOP = new Set("les des une aux que qui pour par sur dans avec sans est sont pas plus comme mais donc car ont ete etre cette ces ses son mon ton tes mes nos vos leur leurs nous vous ils elles elle lui moi toi mwen nan ak epi yon tout comment faire fait quel quelle quels quoi kijan the and".split(" "));
+const SYN = {bouffe:"repas",manger:"repas",mange:"repas",nourriture:"repas",dejeuner:"repas",diner:"repas",souper:"repas",erreur:"bug",probleme:"bug",panne:"bug",bloque:"bug",relancer:"redemarrer",relance:"redemarrer",reboot:"redemarrer",alarme:"rappel",rappeler:"rappel",tache:"taches",todo:"taches"};
+const tok = s => norm(s).split(/[^a-z0-9]+/).filter(m => m.length > 2 && !STOP.has(m)).map(m => SYN[m] || m);
+const rac = m => m.length > 5 ? m.slice(0,5) : m.replace(/[sx]$/,"");
+
+function chercherReponse(question, base){
+  const q = [...new Set(tok(question).map(rac))];
+  if(!q.length) return null;
+  let meilleur = null, best = 0;
+  for(const item of base){
+    const qs = new Set(tok(item.question).map(rac));
+    const ts = new Set((item.tags || []).flatMap(t => tok(t)).map(rac));
+    let score = 0;
+    for(const m of q){ if(qs.has(m) || ts.has(m)) score++; }
+    // reponses apprises du serveur (id "auto…") : seulement si la question est quasi identique
+    if(String(item.id).startsWith("auto") && jac(new Set(q), qs) < 0.75) continue;
+    if(score > best){ best = score; meilleur = item; }
+  }
+  const assez = q.length === 1 ? best === 1 : best >= 2;   // un seul mot en commun ne suffit plus
+  return (assez && best / q.length >= 0.6) ? meilleur.reponse : null;
+}
+
+/* ---- Propositions (mode sans réseau) : plusieurs réponses proches, la personne choisit ---- */
+const _cacheCand = new WeakMap();   // cache hors de l'objet : l'export JSON reste propre
+function motDansTexte(m, texte){
+  if(m.length <= 4) return texte.includes(" " + m + " ") || texte.includes(" " + m + "s ");
+  return texte.includes(" " + m.slice(0, 6));
+}
+function chercherCandidats(question, base, max = 3){
+  const mots = [...new Set(tok(question))];
+  if(!mots.length) return [];
+  const racs = mots.map(rac), res = [], vus = new Set();
+  for(const item of base){
+    if(!item || typeof item.reponse !== "string" || item.reponse === "(pas de réponse locale)") continue;
+    let c = _cacheCand.get(item);
+    if(!c){
+      c = {qs: new Set(tok(item.question).map(rac)),
+           ts: new Set((item.tags || []).flatMap(t => tok(t)).map(rac)),
+           r: " " + norm(item.reponse).replace(/[^a-z0-9]+/g, " ") + " "};
+      _cacheCand.set(item, c);
+    }
+    let score = 0, trouves = 0;
+    mots.forEach((m, i) => {
+      if(c.qs.has(racs[i]) || c.ts.has(racs[i])){ score += 3; trouves++; }          // le mot est dans la question / les tags
+      else if(motDansTexte(m, c.r)){ score += 1; trouves++; }                       // le mot est dans la réponse
+    });
+    if(!trouves || trouves / mots.length < 0.34) continue;
+    res.push({item, score, trouves});
+  }
+  res.sort((a, b) => b.score - a.score || b.trouves - a.trouves);
+  const out = [];
+  for(const r of res){
+    const cle = norm(r.item.question).replace(/\s+/g, " ").trim();
+    if(vus.has(cle)) continue;
+    vus.add(cle); out.push(r.item);
+    if(out.length >= max) break;
+  }
+  return out;
+}
+function apercuReponse(t, n = 90){
+  const p = String(t || "").replace(/```[\s\S]*?```/g, " (code) ").replace(/\s+/g, " ").trim();
+  return p.length > n ? p.slice(0, n - 1).trimEnd() + "…" : p;
+}
+function proposerChoix(agent, question, cands, horsLigne){
+  const unMot = tok(question).length === 1;
+  const intro = unMot
+    ? "Voici ce que j'ai trouvé avec « " + question.trim() + " ». Choisis la réponse qui t'intéresse :"
+    : "Je n'ai pas bien compris ta question. Voici les réponses les plus proches, choisis celle qui convient :";
+  const bulle = afficherMsg("ai", intro);
+  const act = bulle.querySelector(".actions"); if(act) act.remove();
+  const zone = document.createElement("div");
+  zone.style.cssText = "display:flex;flex-direction:column;gap:8px;margin-top:10px";
+  const figer = () => zone.querySelectorAll("button").forEach(b => { b.disabled = true; b.style.opacity = ".55"; });
+  const mk = (titre, sous, f) => {
+    const b = document.createElement("button"); b.className = "act-btn";
+    b.style.cssText = "display:block;width:100%;text-align:left;border-radius:14px;padding:9px 12px;white-space:normal";
+    const t = document.createElement("div"); t.style.fontWeight = "600"; t.textContent = titre; b.appendChild(t);
+    if(sous){ const p = document.createElement("div"); p.style.cssText = "font-size:12px;opacity:.7;margin-top:2px;font-weight:400"; p.textContent = sous; b.appendChild(p); }
+    b.onclick = () => { figer(); b.style.opacity = "1"; b.style.borderColor = "var(--accent1)"; f(); };
+    zone.appendChild(b);
+  };
+  cands.forEach(c => mk(c.question, apercuReponse(c.reponse), () => {
+    ajouterMsg("ai", c.reponse); memoriser(agent, question, c.reponse);
+  }));
+  mk("Aucune de ces réponses", "", () => {
+    ajouterMsg("ai", horsLigne
+      ? "D'accord. Essaie avec d'autres mots, ou passe en ligne (bouton en haut) pour interroger le serveur."
+      : "D'accord. Essaie de reformuler ta question avec d'autres mots.");
+  });
+  bulle.appendChild(zone);
+  chat.scrollTop = chat.scrollHeight;
+}
+
+/* ---- Agent Rédaction ---- */
+const CONNECT = ["d'abord","ensuite","de plus","en effet","cependant","pourtant","toutefois","donc","par consequent","en conclusion","enfin","ainsi","par ailleurs","or","car","mais","en outre","neanmoins","d'une part","d'autre part"];
+const phrases = t => t.split(/(?<=[.!?…])\s+|\n+/).map(s => s.trim()).filter(Boolean);
+const nbMots = t => (t.trim().match(/\S+/g) || []).length;
+const jac = (a, b) => { const u = new Set([...a, ...b]); if(!u.size) return 0; let c = 0; a.forEach(x => { if(b.has(x)) c++; }); return c / u.size; };
+const liste = (arr, max = 15) => arr.length ? arr.slice(0, max).join(", ") + (arr.length > max ? " … (+" + (arr.length - max) + ")" : "") : "—";
+const reste = q => q.replace(/^\s*\S+\s*(?:(?:sur|de|du|des|d')\s*|:\s*)?/i, "").trim();
+
+function comparer(a, b){
+  const sa = new Set(tok(a)), sb = new Set(tok(b));
+  if(!sa.size || !sb.size) return "Les deux textes doivent contenir plus de mots.";
+  const com = [...sa].filter(x => sb.has(x)), ua = [...sa].filter(x => !sb.has(x)), ub = [...sb].filter(x => !sa.has(x));
+  const sim = Math.round(100 * com.length / new Set([...sa, ...sb]).size);
+  const verdict = sim >= 70 ? "textes très proches" : sim >= 40 ? "textes proches" : sim >= 20 ? "peu de points communs" : "textes très différents";
+  const pa = phrases(a), pb = phrases(b), vusB = new Set();
+  const lignes = pa.map((p, i) => {
+    let bj = -1, bs = 0; const sp = new Set(tok(p));
+    pb.forEach((q, j) => { const s = jac(sp, new Set(tok(q))); if(s > bs){ bs = s; bj = j; } });
+    const pct = Math.round(bs * 100);
+    if(pct >= 30) vusB.add(bj);
+    return pct >= 60 ? "A" + (i+1) + " ≈ B" + (bj+1) + " (" + pct + " %) même idée"
+         : pct >= 30 ? "A" + (i+1) + " ~ B" + (bj+1) + " (" + pct + " %) idée voisine"
+         : "A" + (i+1) + " : idée absente de B";
+  });
+  pb.forEach((_, j) => { if(!vusB.has(j)) lignes.push("B" + (j+1) + " : idée absente de A"); });
+  return "📊 COMPARAISON\nRessemblance : " + sim + " % — " + verdict +
+    "\nLongueur : A " + nbMots(a) + " mots · B " + nbMots(b) + " mots" +
+    "\n\n✅ En commun : " + liste(com) + "\n🅰️ Seulement dans A : " + liste(ua) + "\n🅱️ Seulement dans B : " + liste(ub) +
+    "\n\n🔎 PHRASE PAR PHRASE\n" + lignes.join("\n");
+}
+
+function planDissertation(s){
+  if(!s) return "Donne-moi le sujet. Ex : dissertation : l'éducation est-elle la clé du développement ?";
+  return "📝 PLAN DE DISSERTATION\nSujet : " + s +
+    "\n\nINTRODUCTION\n1. Accroche : un fait, une citation ou une question liée au sujet\n2. Présentation : définir les mots clés de « " + s + " »\n3. Problématique : une question précise qui découle du sujet\n4. Annonce du plan : dire les grandes parties" +
+    "\n\nI. THÈSE (oui / arguments pour)\n• Argument 1 → explication → exemple\n• Argument 2 → explication → exemple\n→ Transition" +
+    "\n\nII. ANTITHÈSE (non / limites)\n• Argument 1 → explication → exemple\n• Argument 2 → explication → exemple\n→ Transition" +
+    "\n\nIII. SYNTHÈSE (dépasser l'opposition)\n• Position nuancée et justifiée\n• Exemple qui la confirme" +
+    "\n\nCONCLUSION\n1. Bilan : répondre clairement à la problématique\n2. Ouverture : élargir vers une question proche";
+}
+
+function argumenter(s){
+  if(!s) return "Donne-moi l'idée à défendre. Ex : argument : les jeunes doivent apprendre un métier.";
+  return "💬 CONSTRUIRE UN ARGUMENT\nIdée à défendre : " + s +
+    "\n\n1. Affirmation : dis clairement ta position (« Je pense que… »)\n2. Raison : pourquoi ? (« En effet, car… »)\n3. Preuve / exemple : un fait précis, un chiffre, un cas réel\n4. Objection : ce que l'autre pourrait répondre (« Certains diront que… »)\n5. Réfutation : pourquoi l'objection est faible (« Cependant… »)\n6. Conclusion : reformule (« Donc, ainsi… »)" +
+    "\n\nConnecteurs utiles : d'abord, de plus, en effet, par ailleurs, cependant, en conclusion.";
+}
+
+function analyser(t){
+  if(!t) return "Colle le texte après le mot analyse. Ex : analyse : ton texte ici";
+  const ph = phrases(t), n = nbMots(t), mots = tok(t), freq = {};
+  mots.forEach(m => freq[m] = (freq[m] || 0) + 1);
+  const tri = Object.entries(freq).sort((x, y) => y[1] - x[1]);
+  const rep = tri.filter(([, c]) => c >= 3).slice(0, 6).map(([m, c]) => m + " ×" + c);
+  const cles = tri.slice(0, 8).map(([m]) => m);
+  const nt = norm(t);
+  const conn = CONNECT.filter(c => new RegExp("(^|[^a-z])" + norm(c).replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "([^a-z]|$)").test(nt));
+  const longues = ph.map((p, i) => [i + 1, nbMots(p)]).filter(([, k]) => k > 30).map(([i, k]) => "phrase " + i + " (" + k + " mots)");
+  return "🔬 ANALYSE DU TEXTE\n" + n + " mots · " + ph.length + " phrase(s) · moyenne " + (ph.length ? Math.round(n / ph.length) : 0) + " mots/phrase" +
+    "\n\n🔑 Mots clés : " + liste(cles) + "\n🔁 Répétitions : " + liste(rep) + "\n🔗 Connecteurs : " + liste(conn) +
+    "\n📏 Phrases trop longues : " + liste(longues) +
+    (conn.length < 2 ? "\n\n💡 Ajoute des connecteurs (de plus, cependant, donc) pour mieux enchaîner les idées." : "");
+}
+
+const AIDE_REDACTION = "✍️ AGENT RÉDACTION — commandes\n\n• compare : texte A ||| texte B\n• dissertation : ton sujet\n• argument : l'idée à défendre\n• analyse : ton texte\n\nSépare les deux textes avec |||";
+
+function redaction(q){
+  const n = norm(q).trim();
+  if(/^(aide|ed|help|commandes?)\s*$/.test(n)) return AIDE_REDACTION;
+  const cmdCompare = /^(compare|comparer|comparaison|konpare|konparezo|diferans|difference)/.test(n);
+  if(cmdCompare || q.includes("|||")){
+    const parts = (cmdCompare ? reste(q) : q).split(/\|\|\||###/).map(x => x.trim()).filter(Boolean);
+    return parts.length >= 2 ? comparer(parts[0], parts[1]) : "Pour comparer, écris : compare : texte A ||| texte B";
+  }
+  if(/^(dissertation|disetasyon|plan)/.test(n)) return planDissertation(reste(q));
+  if(/^(argument|agiman)/.test(n)) return argumenter(reste(q));
+  if(/^(analyse|analyser|analiz)/.test(n)) return analyser(reste(q));
+  return null;
+}
+/* ---- Routage automatique : envoie la question vers le bon agent ---- */
+const ROUTAGE_AUTO = true; // true = Knall PROPOSE un autre agent (bouton), sans jamais changer tout seul ; false = aucune proposition
+const MOTS_AGENT = {
+  code: {
+    2: ["code","kod","html","css","javascript","js","python","php","sql","java","json","api","bug","fonction","fonksyon","variable","boucle","script","algorithme","programmer","programmation","pwogram","balise","react","firebase","github","git","debug","compiler","apk","capacitor","framework","base de donnees","div","*programm"],
+    1: ["erreur","site","application","app","web","fichier","serveur","ligne de code","developpeur","dev"]
+  },
+  taches: {
+    2: ["rappel","rapel","rappelle","rappeler","tache","taches","todo","agenda","calendrier","rendez vous","rdv","planning","deadline","echeance","alarme","reunion","a faire","liste de courses","organiser ma journee","*planifi"],
+    1: ["demain","aujourd hui","semaine","programme","priorite","checklist"]
+  },
+  redaction: {
+    2: ["dissertation","disetasyon","argumenter","argument","agiman","comparer","compare","konpare","konparezo","paragraphe","redaction","rediger","grammaire","orthographe","conjugaison","synthese","antithese","problematique","*corrig","analyse de texte"],
+    1: ["texte","phrase","phrases","introduction","conclusion","expression","ecrire","lettre","resume"]
+  },
+  recherche: {
+    2: ["recherche","cherche","chercher","trouve","trouver","informations","infos","information","definition","definir","definis","source","sources","actualite","actualites","wikipedia","biographie","histoire de","*rechech"],
+    1: ["documentation","renseigne","renseigner"]
+  }
+};
+function detecterAgent(question, courant){
+  const n = " " + norm(question).replace(/[^a-z0-9]+/g, " ") + " ";
+  const sc = {general:0, code:0, taches:0, redaction:0, recherche:0};
+  for(const ag in MOTS_AGENT){
+    for(const poids in MOTS_AGENT[ag]){
+      for(const kw of MOTS_AGENT[ag][poids]){
+        const ok = kw[0] === "*" ? n.includes(" " + kw.slice(1)) : n.includes(" " + kw + " ");
+        if(ok) sc[ag] += +poids;
+      }
+    }
+  }
+  if(question.includes("|||")) sc.redaction += 3;
+  if(/\b\d{1,2}\s?h(\s?\d{2})?\b/i.test(question)) sc.taches += 1;
+  if(/[{};<>]|=>|<\/|\bfunction\b/.test(question)) sc.code += 2;
+  const cible = Object.keys(sc).sort((a, b) => sc[b] - sc[a])[0];
+  const autre = Object.keys(sc).filter(a => a !== cible).map(a => sc[a]).sort((a, b) => b - a)[0];
+  if(sc[cible] < 2 || sc[cible] <= autre) return null;       // pas assez sûr
+  if(cible === courant) return null;
+  if(sc[cible] < (sc[courant] || 0) + 2) return null;        // l'agent actuel colle presque autant : on reste
+  return cible;
+}
+/* ---- FIN MOTEUR ---- */
+
+
+/* ---- Consignes ajoutées à chaque question envoyée au serveur ---- */
+const INDICE_COURT = "\n\n(Réponds de façon complète : traite tous les aspects de la demande, avec des détails et des exemples utiles. Ne t'arrête pas après quelques lignes.)";
+const INDICE_CODE = "\n\n(Consignes pour l'agent Code. L'utilisateur est peut-être débutant : parle simplement, sans jargon, dans SA langue. 1) Ne pose AUCUNE question technique et ne demande jamais de choisir une technologie, un langage ou une configuration : décide toi-même du meilleur choix. 2) Pour créer une application, un jeu ou un outil : livre UN SEUL fichier index.html complet et autonome (HTML + CSS + JavaScript) qui s'ouvre et se teste tout de suite avec le bouton Aperçu, pensé pour le téléphone (tactile, plein écran, responsive), avec un design soigné, tous les écrans et fonctions utiles (menu, état ou score, rejouer, sauvegarde si utile, messages d'erreur clairs). Le code doit être long et complet, jamais un squelette ni un exemple de quelques lignes : vise plusieurs centaines de lignes quand le projet le demande. N'utilise un autre langage que si l'utilisateur le demande ou si c'est indispensable. 3) Si la demande est floue, fais des choix raisonnables, écris-les en une phrase après le code. Une seule question est permise uniquement si la demande est impossible à deviner. 4) Relis ton code avant de répondre (syntaxe, noms, cas limites) et ne dis jamais « c'est bon » sans l'avoir vérifié. 5) Après le code : « À vérifier : » avec 2 ou 3 points simples (ce qui peut manquer, comment tester), puis propose 2 améliorations concrètes en une phrase.)";
+
+/* ---- Options de l'agent Code : langage, style, tests ---- */
+const CODE_LANGS = ["Auto","Python","JavaScript","TypeScript","Java","Kotlin","Go","Rust","C#","PHP","C++","HTML/CSS","Bash"];
+const CODE_STYLES = {
+  "standard": "Style par défaut",
+  "pep8": "PEP8 (Python)",
+  "airbnb": "Airbnb (JavaScript)",
+  "google": "Google Java Style",
+  "clean": "Clean code commenté"
+};
+let codeOpt = {lang: "Auto", style: "standard", tests: false};
+try{ codeOpt = Object.assign(codeOpt, JSON.parse(localStorage.getItem("knall-codeopt") || "{}")); }catch(e){}
+function sauverCodeOpt(){ try{ localStorage.setItem("knall-codeopt", JSON.stringify(codeOpt)); }catch(e){} }
+function indiceCode(){
+  let o = "";
+  if(codeOpt.lang !== "Auto") o += " Langage imposé : " + codeOpt.lang + ".";
+  if(codeOpt.style !== "standard") o += " Style de code : " + CODE_STYLES[codeOpt.style] + ".";
+  if(codeOpt.tests) o += " Ajoute aussi un fichier de tests unitaires qui couvre les cas normaux et les cas limites.";
+  o += " Signale tout risque de sécurité (injection, eval, secrets en dur, entrées non vérifiées) et évite ces motifs dans ton code.";
+  return INDICE_CODE.slice(0, -1) + o + ")";
+}
+function majBarreCode(){
+  const bar = $("codeBar"), on = agentActif === "code";
+  bar.classList.toggle("on", on);
+  if(!on || bar.dataset.ok) return;
+  bar.dataset.ok = "1";
+  const mkSel = (opts, val, f, label) => {
+    const sel = document.createElement("select"); sel.setAttribute("aria-label", label);
+    opts.forEach(([v, t]) => { const o = document.createElement("option"); o.value = v; o.textContent = t; if(v === val) o.selected = true; sel.appendChild(o); });
+    sel.onchange = () => { f(sel.value); sauverCodeOpt(); };
+    bar.appendChild(sel);
+  };
+  mkSel(CODE_LANGS.map(l => [l, l === "Auto" ? "Langage : auto" : l]), codeOpt.lang, v => codeOpt.lang = v, "Langage");
+  mkSel(Object.keys(CODE_STYLES).map(k => [k, CODE_STYLES[k]]), codeOpt.style, v => codeOpt.style = v, "Style de code");
+  const t = document.createElement("button"); t.className = "pill" + (codeOpt.tests ? " on" : ""); t.textContent = "Avec tests";
+  t.onclick = () => { codeOpt.tests = !codeOpt.tests; t.classList.toggle("on", codeOpt.tests); sauverCodeOpt(); };
+  bar.appendChild(t);
+}
+
+/* ---- Notifications ---- */
+const plug = nom => { const C = window.Capacitor; return C && C.Plugins ? C.Plugins[nom] : null; };
+async function demanderNotifs(){
+  const N = plug("LocalNotifications"); if(!N) return false;
+  try{ let p = await N.checkPermissions(); if(p.display !== "granted") p = await N.requestPermissions(); return p.display === "granted"; }catch(e){ return false; }
+}
+async function notifier(titre, texte){
+  const N = plug("LocalNotifications"); if(!N) return;
+  try{
+    if(!(await demanderNotifs())) return;
+    await N.schedule({notifications: [{id: Date.now() % 2000000000, title: titre, body: apercuReponse(texte, 140)}]});
+  }catch(e){}
+}
+
+/* ---- Police du texte : catégorie + taille ---- */
+const NOMS_POLICES = {classique: "Classique (livre)", moderne: "Moderne", confort: "Confort (large)", machine: "Machine"};
+const NOMS_TAILLES = {petit: "Petit", moyen: "Moyen", grand: "Grand"};
+let policeOpt = {cat: "classique", taille: "moyen"};
+try{ policeOpt = Object.assign(policeOpt, JSON.parse(localStorage.getItem("knall-police") || "{}")); }catch(e){}
+function majPoliceVal(){ const e = $("policeVal"); if(e) e.textContent = NOMS_POLICES[policeOpt.cat] + " · " + NOMS_TAILLES[policeOpt.taille]; }
+function changerPolice(){ _appliquerPolice(policeOpt); try{ localStorage.setItem("knall-police", JSON.stringify(policeOpt)); }catch(e){} majPoliceVal(); }
+function ouvrirPolice(){
+  const ov = document.createElement("div"); ov.className = "overlay"; ov.style.zIndex = 80;
+  ov.innerHTML = '<div class="sheet" style="padding:20px 18px"><div style="font-size:18px;font-weight:700;margin-bottom:12px">Police du texte</div><div id="pCats" style="display:flex;flex-direction:column;gap:8px"></div><div style="font-weight:600;margin:16px 0 8px">Taille</div><div id="pTailles" style="display:flex;gap:8px"></div><button id="pOk" style="width:100%;margin-top:18px;border:0;border-radius:14px;padding:12px;color:#fff;font:inherit;font-weight:600;background:linear-gradient(135deg,var(--accent1),var(--accent2))">Terminer</button></div>';
+  document.body.appendChild(ov);
+  const marquer = () => {
+    ov.querySelectorAll("[data-cat]").forEach(b => { const on = b.dataset.cat === policeOpt.cat; b.style.borderColor = on ? "var(--accent1)" : "var(--border)"; b.style.boxShadow = on ? "0 0 0 1px var(--accent1) inset" : "none"; });
+    ov.querySelectorAll("[data-tl]").forEach(b => { const on = b.dataset.tl === policeOpt.taille; b.style.borderColor = on ? "var(--accent1)" : "var(--border)"; b.style.boxShadow = on ? "0 0 0 1px var(--accent1) inset" : "none"; });
+  };
+  Object.keys(NOMS_POLICES).forEach(k => {
+    const b = document.createElement("button"); b.dataset.cat = k;
+    b.style.cssText = "text-align:left;border:1px solid var(--border);background:var(--card);color:var(--text);border-radius:14px;padding:10px 14px;cursor:pointer;font-family:" + _POLICES[k];
+    b.innerHTML = '<div style="font-weight:700;font-size:15px"></div><div style="font-size:14px;opacity:.75;margin-top:2px">Bonjou, mwen se Knall. Ki jan m ka ede w jodi a ?</div>';
+    b.firstChild.textContent = NOMS_POLICES[k];
+    b.onclick = () => { policeOpt.cat = k; changerPolice(); marquer(); };
+    ov.querySelector("#pCats").appendChild(b);
+  });
+  Object.keys(NOMS_TAILLES).forEach(k => {
+    const b = document.createElement("button"); b.dataset.tl = k; b.textContent = NOMS_TAILLES[k];
+    b.style.cssText = "flex:1;border:1px solid var(--border);background:var(--card);color:var(--text);border-radius:14px;padding:10px;cursor:pointer;font:inherit;font-size:" + (_TAILLES[k]) + "px";
+    b.onclick = () => { policeOpt.taille = k; changerPolice(); marquer(); };
+    ov.querySelector("#pTailles").appendChild(b);
+  });
+  ov.querySelector("#pOk").onclick = () => ov.remove();
+  marquer();
+}
+async function activerNotifs(){
+  const e = $("notifVal");
+  if(!plug("LocalNotifications")){ e.textContent = "Disponible seulement dans l'application Android Knall."; return; }
+  const ok = await demanderNotifs();
+  e.textContent = ok ? "Activées. Tu seras alerté quand une réponse est prête." : "Refusées. Active-les dans les réglages Android : Applications > Knall > Notifications.";
+  if(ok) notifier("Knall", "Les notifications sont activées.");
+}
+
+/* ---- Guide interactif ---- */
+const GUIDE = [
+  ["Bienvenue dans Knall", "Knall répond en ligne ou sans réseau. Ce guide prend 30 secondes."],
+  ["Les agents", "Touche le menu en haut pour choisir : Général, Tâches, Code, Recherche, Rédaction ou Image."],
+  ["En ligne / Sans réseau", "En ligne, Knall interroge le serveur. Sans réseau, il cherche dans ses connaissances et te propose jusqu'à 3 réponses proches s'il hésite."],
+  ["Sous chaque réponse", "Tu peux copier, partager ou écouter la réponse. Le micro permet de dicter ta question."],
+  ["Notifications", "Si tu quittes Knall pendant qu'il travaille, tu reçois une notification quand la réponse est prête."],
+  ["Réglages", "Dans Paramètres : thème clair ou sombre, vitesse de la voix, et ce guide quand tu veux."]
+];
+function ouvrirGuide(){
+  let i = 0;
+  const ov = document.createElement("div"); ov.className = "overlay"; ov.style.zIndex = 80;
+  ov.innerHTML = '<div class="sheet" style="padding:22px 20px;text-align:center"><div id="gTitre" style="font-size:19px;font-weight:700;margin-bottom:10px"></div><div id="gTexte" style="font-size:15px;line-height:1.5;opacity:.9;min-height:92px"></div><div id="gPoints" style="display:flex;gap:6px;justify-content:center;margin:14px 0"></div><div style="display:flex;gap:10px"><button id="gPasser" class="act-btn" style="flex:1;border-radius:14px;padding:11px">Passer</button><button id="gSuite" style="flex:2;border:0;border-radius:14px;padding:11px;color:#fff;font:inherit;font-weight:600;background:linear-gradient(135deg,var(--accent1),var(--accent2))"></button></div></div>';
+  document.body.appendChild(ov);
+  const fin = () => { try{ localStorage.setItem("knall-guide", "1"); }catch(e){} ov.remove(); demanderNotifs(); };
+  const rendre = () => {
+    ov.querySelector("#gTitre").textContent = GUIDE[i][0];
+    ov.querySelector("#gTexte").textContent = GUIDE[i][1];
+    ov.querySelector("#gPoints").innerHTML = GUIDE.map((_, k) => '<span style="width:8px;height:8px;border-radius:50%;background:' + (k === i ? "var(--accent1)" : "var(--border)") + '"></span>').join("");
+    ov.querySelector("#gSuite").textContent = i === GUIDE.length - 1 ? "Terminer" : "Suivant";
+  };
+  ov.querySelector("#gPasser").onclick = fin;
+  ov.querySelector("#gSuite").onclick = () => { if(i < GUIDE.length - 1){ i++; rendre(); } else fin(); };
+  rendre();
+}
+
+/* ---- Appel du serveur relais ---- */
+async function appelerServeur(agent, question, image){
+  const indice = agent === "code" ? indiceCode() : INDICE_COURT;
+  const messages = hist[agent].slice(-10).concat([{role:"user", content:question + indice}]);
+  const ctl = new AbortController(); ctlEnCours.add(ctl); majBoutonEnvoi();
+  const requete = fetch(PROXY_URL.replace(/\/$/, "") + "/chat", {
+    signal: ctl.signal,
+    method: "POST",
+    headers: {"Content-Type":"application/json", "x-knall-token": APP_TOKEN},
+    body: JSON.stringify(image ? {agent, messages, images:[image]} : {agent, messages})
+  });
+  const delai = new Promise((_, rej) => setTimeout(() => rej(new Error("délai dépassé")), 70000));
+  let res;
+  try{ res = await Promise.race([requete, delai]); } // Render gratuit: reveil possible ~1 min
+  catch(e){ if(ctl.arret) e.arret = true; throw e; }
+  finally{ ctlEnCours.delete(ctl); majBoutonEnvoi(); }
+  const data = await res.json().catch(() => ({}));
+  if(!res.ok) throw new Error(data.error || ("Erreur " + res.status));
+  return data.reponse;
+}
+
+/* ---- Menu agents ---- */
+const menuBtn=document.getElementById('menuBtn'), menu=document.getElementById('menu'), agentLabel=document.getElementById('agentLabel');
+menuBtn.onclick=()=>menu.classList.toggle('open');
+document.addEventListener('click',e=>{ if(!menu.contains(e.target)&&e.target!==menuBtn) menu.classList.remove('open'); });
+menu.querySelectorAll('button').forEach(b=>b.onclick=()=>{
+  menu.querySelectorAll('button').forEach(x=>x.classList.remove('active'));
+  b.classList.add('active');
+  agentActif = b.dataset.agent;
+  threadActif().agent = agentActif;
+  sauverThreads();
+  agentLabel.textContent = NOMS[agentActif]; majBarreImage();
+  menu.classList.remove('open');
+  ajouterMsg("sys", "Agent actif : " + NOMS[agentActif]);
+  if(agentActif === "redaction") ajouterMsg("sys", "Tape « aide » pour voir les commandes.");
+  if(agentActif === "image") ajouterMsg("sys", "🎨 Décris l'image que tu veux : chaque message crée une image. Choisis le style en bas (Réaliste par défaut).");
+});
+
+/* ---- Thème ---- */
+const themeBtn=document.getElementById('themeBtn');
+function applyTheme(t){ document.documentElement.setAttribute('data-theme',t); try{localStorage.setItem('knall-theme',t)}catch(e){} }
+let saved=null; try{saved=localStorage.getItem('knall-theme')}catch(e){}
+applyTheme(saved||document.documentElement.getAttribute('data-theme')||'dark');
+themeBtn.onclick=()=>{ const cur=document.documentElement.getAttribute('data-theme'); applyTheme(cur==='light'?'dark':'light'); try{ majModes(); }catch(e){} };
+
+/* ---- Fichier joint : lu en local, envoyé avec le prochain message ---- */
+const _libs = {};
+function chargerLib(cle){
+  if(_libs[cle]) return _libs[cle];
+  const D = {katex: ["https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js", "https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css"],
+             pdf: ["https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"],
+             mammoth: ["https://cdn.jsdelivr.net/npm/mammoth@1.8.0/mammoth.browser.min.js"]}[cle];
+  return _libs[cle] = new Promise(ok => {
+    if(D[1]){ const l = document.createElement("link"); l.rel = "stylesheet"; l.href = D[1]; document.head.appendChild(l); }
+    const sc = document.createElement("script"); sc.src = D[0]; sc.async = true;
+    sc.onload = () => { if(cle === "pdf" && window.pdfjsLib) pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js"; ok(true); };
+    sc.onerror = () => { delete _libs[cle]; ok(false); };
+    document.head.appendChild(sc);
+  });
+}
+window.addEventListener("load", () => setTimeout(() => chargerLib("katex"), 600));
+async function lirePDF(buf){
+  if(!(await chargerLib("pdf"))) throw new Error("Lecture PDF indisponible : connexion nécessaire la première fois.");
+  const doc = await pdfjsLib.getDocument({data: buf}).promise;
+  let t = "";
+  for(let i=1;i<=doc.numPages;i++){ const p = await doc.getPage(i); const c = await p.getTextContent(); t += c.items.map(x=>x.str).join(" ") + "\n"; }
+  return t;
+}
+async function lireDocx(buf){ if(!(await chargerLib("mammoth"))) throw new Error("Lecture Word indisponible : connexion nécessaire la première fois."); return (await mammoth.extractRawText({arrayBuffer: buf})).value; }
+// Excel (.xlsx .xls .ods) : la librairie se charge seulement quand on joint un tableur
+let _xlsxPret = null;
+function chargerXLSX(){
+  if(window.XLSX) return Promise.resolve();
+  if(!_xlsxPret) _xlsxPret = new Promise((ok, ko) => {
+    const sc = document.createElement("script");
+    sc.src = "https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js";
+    sc.onload = ok; sc.onerror = () => { _xlsxPret = null; ko(new Error("lecture Excel indisponible (internet ?)")); };
+    document.head.appendChild(sc);
+  });
+  return _xlsxPret;
+}
+async function lireExcel(buf){
+  await chargerXLSX();
+  const wb = XLSX.read(buf, {type:"array"});
+  return wb.SheetNames.slice(0, 5).map(n => "### Feuille « " + n + " »\n" + XLSX.utils.sheet_to_csv(wb.Sheets[n])).join("\n\n");
+}
+// Li yon fichye tèks an eseye UTF-8 dabò ; si sa bay karaktè kraze (encodage Windows-1252/Latin-1), retounen li ak bon ankòdaj la
+function lireTexteAvecEncodage(buf){
+  const utf8 = new TextDecoder("utf-8", {fatal:false}).decode(buf);
+  if(utf8.includes("\uFFFD")) return new TextDecoder("windows-1252").decode(buf);
+  return utf8;
+}
+let fichierJoint = null;
+function renderFichierJoint(){
+  const chip = $("fichierChip");
+  const mini = $("fichierMini");
+  if(fichierJoint){
+    chip.classList.add("on");
+    $("fichierNom").textContent = (fichierJoint.pending ? "⏳ Lecture de l'image… " : "📎 ") + fichierJoint.nom;
+    if(fichierJoint.image){ mini.src = fichierJoint.image; mini.style.display = "block"; } else mini.style.display = "none";
+  }else{ chip.classList.remove("on"); mini.style.display = "none"; }
+}
+$("attachBtn").onclick = () => $("fileInput").click();
+$("fichierX").onclick = () => { fichierJoint = null; renderFichierJoint(); };
+/* ---- Photos de documents / screenshots : réduction + lecture du texte (OCR) ---- */
+function chargerImage(f){
+  return new Promise((ok, ko) => {
+    const url = URL.createObjectURL(f), img = new Image();
+    img.onload = () => {
+      const k = Math.min(1, 1600 / Math.max(img.width, img.height));
+      const c = document.createElement("canvas"); c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
+      c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+      URL.revokeObjectURL(url); ok(c.toDataURL("image/jpeg", 0.85));
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); ko(new Error("image illisible")); };
+    img.src = url;
+  });
+}
+let _ocrPret = null;
+function chargerOCR(){
+  if(window.Tesseract) return Promise.resolve();
+  if(!_ocrPret) _ocrPret = new Promise((ok, ko) => {
+    const sc = document.createElement("script");
+    sc.src = "https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js";
+    sc.onload = ok; sc.onerror = () => { _ocrPret = null; ko(new Error("lecture d'image indisponible (internet ?)")); };
+    document.head.appendChild(sc);
+  });
+  return _ocrPret;
+}
+async function lireImage(dataUrl){
+  await chargerOCR();
+  const r = await Tesseract.recognize(dataUrl, "fra+eng");
+  return ((r.data && r.data.text) || "").trim();
+}
+async function joindre(e){
+  const f = e.target.files[0]; if(!f) return;
+  const ext = f.name.split(".").pop().toLowerCase();
+  try{
+    if(/^image\//.test(f.type)){
+      const data = await chargerImage(f);
+      const fj = { nom: f.name || "photo.jpg", image: data, texte: "", pending: true };
+      fichierJoint = fj; renderFichierJoint();
+      lireImage(data).then(t => {
+        fj.texte = (t || "(aucun texte détecté dans l'image)").slice(0, 6000);
+      }).catch(err => {
+        fj.texte = "(lecture du texte impossible : " + err.message + ")";
+        ajouterMsg("sys", "Image jointe, mais : " + err.message);
+      }).finally(() => { fj.pending = false; if(fichierJoint === fj) renderFichierJoint(); });
+    }else{
+      let texte;
+      if(ext === "pdf") texte = await lirePDF(await f.arrayBuffer());
+      else if(ext === "docx") texte = await lireDocx(await f.arrayBuffer());
+      else if(/^(xlsx|xlsm|xls|ods)$/.test(ext)) texte = await lireExcel(await f.arrayBuffer());
+      else{
+        texte = lireTexteAvecEncodage(await f.arrayBuffer());
+        if((texte.slice(0, 4000).match(/[\u0000-\u0008\u000E-\u001F]/g) || []).length > 5) throw new Error("ce format n'est pas lisible comme du texte");
+      }
+      fichierJoint = { nom: f.name, texte: texte.slice(0, 6000) };
+      renderFichierJoint();
+    }
+  }catch(err){ ajouterMsg("sys", "Impossible de lire " + (f.name || "le fichier") + " : " + err.message); }
+  e.target.value = "";
+}
+$("fileInput").onchange = joindre;
+$("camInput").onchange = joindre;
+/* ---- Caméra en direct (si le navigateur l'autorise), sinon retour au sélecteur de photo ---- */
+async function ouvrirCamera(){
+  const md = navigator.mediaDevices;
+  if(!md || !md.getUserMedia){ $("camInput").click(); return; }
+  let mode = "environment", flux = null;
+  const ov = document.createElement("div");
+  ov.style.cssText = "position:fixed;inset:0;z-index:100000;background:#000;display:flex;flex-direction:column";
+  const v = document.createElement("video");
+  v.autoplay = true; v.playsInline = true; v.muted = true;
+  v.style.cssText = "flex:1;min-height:0;width:100%;object-fit:contain;background:#000";
+  const bar = document.createElement("div");
+  bar.style.cssText = "display:flex;align-items:center;justify-content:space-around;padding:14px 16px calc(14px + env(safe-area-inset-bottom,0px));background:#000";
+  const mkb = (txt, css) => { const b = document.createElement("button"); b.type = "button"; b.textContent = txt; b.style.cssText = "border:0;cursor:pointer;color:#fff;background:rgba(255,255,255,.18);border-radius:999px;font-size:15px;padding:12px 18px;" + (css || ""); return b; };
+  const bAnn = mkb("Annuler"), bShot = mkb("", "width:68px;height:68px;padding:0;background:#fff;border:4px solid rgba(255,255,255,.5)"), bFlip = mkb("Retourner");
+  bShot.setAttribute("aria-label", "Prendre la photo");
+  bar.append(bAnn, bShot, bFlip); ov.append(v, bar); document.body.appendChild(ov);
+  const arreter = () => { if(flux) flux.getTracks().forEach(t => t.stop()); flux = null; };
+  const fermer = () => { arreter(); ov.remove(); };
+  const demarrer = async () => {
+    arreter();
+    flux = await md.getUserMedia({video:{facingMode:{ideal:mode}}, audio:false});
+    v.srcObject = flux;
+    try{ await v.play(); }catch(e){}
+  };
+  try{ await demarrer(); }catch(e){ fermer(); $("camInput").click(); return; }
+  bAnn.onclick = fermer;
+  bFlip.onclick = async () => {
+    const avant = mode; mode = mode === "environment" ? "user" : "environment";
+    try{ await demarrer(); }catch(e){ mode = avant; try{ await demarrer(); }catch(_){ fermer(); } }
+  };
+  bShot.onclick = () => {
+    if(!v.videoWidth) return;
+    const c = document.createElement("canvas"); c.width = v.videoWidth; c.height = v.videoHeight;
+    c.getContext("2d").drawImage(v, 0, 0);
+    c.toBlob(b => {
+      fermer();
+      if(!b){ ajouterMsg("sys", "Photo impossible, réessaie."); return; }
+      const f = new File([b], "photo-" + Date.now() + ".jpg", {type:"image/jpeg"});
+      joindre({target:{files:[f], value:""}});
+    }, "image/jpeg", 0.9);
+  };
+}
+$("camBtn").onclick = ouvrirCamera;
+/* ---- Annonce / maintenance envoyées depuis l'app Admin (GET /config) ---- */
+(function(){
+  let bandeau = null;
+  const montrer = (txt, fixe) => {
+    if(!bandeau){
+      bandeau = document.createElement("div");
+      bandeau.style.cssText = "display:flex;gap:10px;align-items:flex-start;padding:10px 14px;font-size:14px;line-height:1.35;background:#1d2552;color:#e8ebff;border-bottom:1px solid #2c3670";
+      const t = document.createElement("span"); t.style.flex = "1"; bandeau.appendChild(t);
+      const x = document.createElement("button"); x.type = "button"; x.textContent = "✕"; x.setAttribute("aria-label", "Fermer");
+      x.style.cssText = "border:0;background:transparent;color:inherit;font-size:16px;cursor:pointer";
+      x.onclick = () => { try{ localStorage.setItem("knall-annonce-vue", bandeau.dataset.txt || ""); }catch(e){} bandeau.remove(); bandeau = null; };
+      bandeau.appendChild(x);
+      const h = document.querySelector("header"); if(h) h.after(bandeau);
+    }
+    bandeau.dataset.txt = txt; bandeau.firstChild.textContent = txt;
+    bandeau.lastChild.hidden = !!fixe;
+  };
+  const cacher = () => { if(bandeau){ bandeau.remove(); bandeau = null; } };
+  async function lireConfig(){
+    if(!MODE_EN_LIGNE) return cacher();   // mode hors-ligne : aucun contact avec le serveur
+    try{
+      const r = await fetch(PROXY_URL.replace(/\/$/, "") + "/config", { headers: { "x-knall-token": APP_TOKEN } });
+      if(!r.ok) return;
+      const c = await r.json();
+      if(c.maintenance){ montrer(c.messageMaintenance || "Knall est en maintenance. Réessaie bientôt.", true); return; }
+      let vue = ""; try{ vue = localStorage.getItem("knall-annonce-vue") || ""; }catch(e){}
+      if(c.anons && c.anons !== vue) montrer(c.anons, false); else cacher();
+    }catch(e){}
+  }
+  lireConfig();
+  setInterval(lireConfig, 5 * 60 * 1000);
+  document.addEventListener("visibilitychange", () => { if(!document.hidden) lireConfig(); });
+})();
+/* ---- Menu « + » (fichier / photo) ---- */
+$("plusBtn").onclick = e => { e.stopPropagation(); $("plusMenu").classList.toggle("open"); };
+document.addEventListener("click", () => $("plusMenu").classList.remove("open"));
+
+/* ---- Génération d'image (Pollinations, via le serveur relais) ---- */
+const DECLENCHEUR_MUSIQUE = /^(musique|music|mizik|compose(-moi)?\s+(une\s+|yon\s+)?(musique|m[ée]lodie|mizik)|cr[ée]e(-moi)?\s+(une\s+)?(musique|m[ée]lodie)|fè\s+yon\s+mizik)\s*[:\-]?\s*/i;
+const DECLENCHEUR_IMAGE = /^(photo\s*[:\-]|illustration\s*[:\-]|(?:(fais|fè|fe)(-moi)?\s+(une|yon)\s+(image|imaj|photo)|image|imaj|g[ée]n[èe]re(-|\s+)?(moi\s+)?(une\s+)?image|dessine(-moi)?|dessin|cr[ée]e(-moi)?\s+(une\s+)?image|fè\s+yon\s+imaj)(?![a-zà-ÿ])\s*[:\-]?)\s*/i;
+/* ---- Stockage des images / musiques (IndexedDB, hors du localStorage) ---- */
+let _mdb = null;
+function mediaDB(){
+  return _mdb || (_mdb = new Promise((ok, ko) => {
+    try{
+      const r = indexedDB.open("knall-media", 1);
+      r.onupgradeneeded = () => r.result.createObjectStore("m");
+      r.onsuccess = () => ok(r.result); r.onerror = () => ko(r.error);
+    }catch(e){ ko(e); }
+  }));
+}
+const mediaOp = (mode, f) => mediaDB().then(db => new Promise((ok, ko) => {
+  const st = db.transaction("m", mode).objectStore("m"), rq = f(st);
+  rq.onsuccess = () => ok(rq.result); rq.onerror = () => ko(rq.error);
+}));
+const mediaSave = (id, blob) => mediaOp("readwrite", st => st.put(blob, id)).catch(() => {});
+const mediaGet = id => mediaOp("readonly", st => st.get(id)).catch(() => null);
+const mediaCount = () => mediaOp("readonly", st => st.count()).catch(() => 0);
+const mediaClear = () => mediaOp("readwrite", st => st.clear()).catch(() => {});
+
+async function sauverBlob(nom, blob, btn, partager){
+  const flash = t => { if(btn){ const o = btn.innerHTML; btn.textContent = t; setTimeout(() => btn.innerHTML = o, 1600); } };
+  const P = window.Capacitor && window.Capacitor.Plugins;
+  if(P && P.Filesystem && P.Share){
+    try{
+      const b64 = await new Promise((ok, ko) => { const r = new FileReader(); r.onload = () => ok(String(r.result).split(",")[1]); r.onerror = ko; r.readAsDataURL(blob); });
+      const r = await P.Filesystem.writeFile({path:nom, data:b64, directory:"CACHE"});
+      await P.Share.share({title:nom, url:r.uri, dialogTitle:"Ouvrir avec…"});
+      return;
+    }catch(e){ if(e && /cancel/i.test(e.message || "")) return; }
+  }
+  if(partager){
+    try{
+      const f = new File([blob], nom, {type: blob.type});
+      if(navigator.canShare && navigator.canShare({files:[f]})){ await navigator.share({files:[f], title:nom}); return; }
+    }catch(e){ if(e && e.name === "AbortError") return; }
+  }
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a"); a.href = url; a.download = nom; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 4000); flash("✅ Téléchargé");
+}
+/* ---- Visionneuse : touche une image pour l'ouvrir en grand (re-touche pour zoomer, ✕ ou fond pour fermer) ---- */
+function ouvrirImage(src, alt){
+  const ov = document.createElement("div");
+  ov.style.cssText = "position:fixed;inset:0;z-index:100001;background:rgba(0,0,0,.94);display:flex;overflow:auto;-webkit-overflow-scrolling:touch";
+  const im = document.createElement("img"); im.src = src; im.alt = alt || "";
+  let zoom = false;
+  const ajuster = () => { im.style.cssText = zoom ? "max-width:none;width:200%;height:auto;margin:auto;cursor:zoom-out" : "max-width:100%;max-height:100%;object-fit:contain;margin:auto;cursor:zoom-in"; };
+  ajuster();
+  im.onclick = e => { e.stopPropagation(); zoom = !zoom; ajuster(); };
+  const x = document.createElement("button"); x.type = "button"; x.textContent = "✕"; x.setAttribute("aria-label", "Fermer");
+  x.style.cssText = "position:fixed;top:calc(12px + env(safe-area-inset-top,0px));right:14px;z-index:2;border:0;border-radius:999px;width:42px;height:42px;font-size:20px;color:#fff;background:rgba(255,255,255,.2);cursor:pointer";
+  const esc = e => { if(e.key === "Escape") fermer(); };
+  const fermer = () => { ov.remove(); document.removeEventListener("keydown", esc); };
+  x.onclick = fermer; ov.onclick = fermer;
+  document.addEventListener("keydown", esc);
+  ov.append(im, x); document.body.appendChild(ov);
+}
+function montrerMedia(bulle, media, blob){
+  if(media.kind === "document") return montrerDocument(bulle, media, blob);
+  const zone = bulle.querySelector(".txt"); zone.innerHTML = "";
+  const url = URL.createObjectURL(blob);
+  let el;
+  if(media.kind === "audio"){ el = document.createElement("audio"); el.controls = true; el.style.width = "100%"; el.src = url; }
+  else{ el = document.createElement("img"); el.className = "gen"; el.alt = media.prompt; el.src = url; el.style.cursor = "zoom-in"; el.onclick = () => ouvrirImage(url, media.prompt); }
+  const l = document.createElement("div"); l.textContent = (media.kind === "audio" ? "🎵 " : "🎨 ") + media.prompt; l.style.cssText = "font-size:13px;opacity:.85;margin-bottom:4px";
+  zone.append(l, el);
+  const ext = media.kind === "audio" ? "wav" : ((blob.type.split("/")[1] || "png").replace("jpeg","jpg"));
+  const nom = "knall-" + (media.kind === "audio" ? "musique" : "image") + "-" + media.id.slice(-5) + "." + ext;
+  const a = bulle.querySelector(".actions"); if(!a) return; a.innerHTML = "";
+  const mk = (t, f) => { const b = document.createElement("button"); b.className = "act-btn"; b.textContent = t; b.onclick = () => f(b); a.appendChild(b); };
+  mk(media.kind === "audio" ? "⬇️ Télécharger" : "💾 Enregistrer", b => sauverBlob(nom, blob, b, false));
+  mk("📤 Partager", b => sauverBlob(nom, blob, b, true));
+  mk("🔄 Refaire", () => media.kind === "audio" ? genererMusique(media.prompt) : genererImage(media.prompt));
+}
+function afficherMedia(m){
+  const b = afficherMsg(m.type, iconeMedia(m.media.kind) + m.media.prompt);
+  mediaGet(m.media.id).then(blob => { if(blob) montrerMedia(b, m.media, blob); else remplirMsg(b, iconeMedia(m.media.kind) + m.media.prompt + "\\n(fichier supprimé de cet appareil)"); });
+}
+function lierMedia(bulle, media, blob){
+  bulle.classList.remove("pending");
+  bulle.dataset.raw = (media.kind === "audio" ? "Musique : " : "Image : ") + media.prompt;
+  const v = threadActif().vues; v[v.length-1].texte = "[" + media.kind + "] " + media.prompt; v[v.length-1].media = media; sauverThreads();
+  montrerMedia(bulle, media, blob);
+}
+
+async function genererImage(prompt){
+  const bulle = ajouterMsg("ai", "🎨 " + prompt);
+  bulle.classList.add("pending");
+  bulle.querySelector(".txt").innerHTML = '<div class="typing"><span></span><span></span><span></span></div>';
+  const essai = async (p) => {
+    const ctl = new AbortController(), t = setTimeout(() => ctl.abort(), 90000);
+    try{
+      const url = PROXY_URL.replace(/\/$/,"") + "/image?prompt=" + encodeURIComponent(p) + "&t=" + Date.now();
+      const res = await fetch(url, { headers: { "x-knall-token": APP_TOKEN, "x-knall-device": ID_APPAREIL }, signal: ctl.signal });
+      if(!res.ok){ const d = await res.json().catch(()=>({})); throw new Error(d.error || ("Erreur " + res.status)); }
+      const blob = await res.blob();
+      if(!/^image\//.test(blob.type)) throw new Error("le serveur n'a pas renvoyé une image");
+      return blob;
+    }finally{ clearTimeout(t); }
+  };
+  try{
+    if(!PROXY_URL) throw new Error("serveur non configuré");
+    const finalP = await preparerPrompt(prompt);
+    let blob;
+    try{ blob = await essai(finalP); }
+    catch(e){ if(e.name === "AbortError" || /Failed to fetch|Erreur 5\d\d/.test(e.message)){ blob = await essai(finalP); } else throw e; } // 2e essai (serveur qui se réveille)
+    const media = {id:"i" + Date.now(), kind:"image", prompt};
+    await mediaSave(media.id, blob);
+    lierMedia(bulle, media, blob);
+  }catch(e){
+    bulle.classList.remove("pending");
+    remplirMsg(bulle, "Impossible de générer l'image : " + (e.name === "AbortError" ? "délai dépassé (le serveur dort peut-être, réessaie)" : e.message));
+    const v = threadActif().vues; v[v.length-1].texte = bulle.dataset.raw; sauverThreads();
+  }
+}
+
+/* ---- Musique 100% hors ligne (synthèse dans l'app, sans serveur) ---- */
+function styleMusique(p){
+  p = norm(p);
+  const has = (...m) => m.some(x => p.includes(x));
+  let st = {bpm:100, mineur:false, boite:"pop", nom:"pop"};
+  if(has("kompa","compas")) st = {bpm:118, mineur:false, boite:"kompa", nom:"kompa"};
+  else if(has("zouk")) st = {bpm:98, mineur:false, boite:"kompa", nom:"zouk"};
+  else if(has("rara")) st = {bpm:132, mineur:true, boite:"rara", nom:"rara"};
+  else if(has("rock","energi","dynamique","puissant")) st = {bpm:140, mineur:false, boite:"rock", nom:"rock"};
+  else if(has("rap","hip hop","hiphop","trap")) st = {bpm:90, mineur:true, boite:"hiphop", nom:"hip-hop"};
+  else if(has("gospel","louange","priye","priere","worship")) st = {bpm:78, mineur:false, boite:"calme", nom:"gospel"};
+  else if(has("calme","relax","doux","dous","lent","dormir","detente","sleep")) st = {bpm:72, mineur:false, boite:"calme", nom:"calme"};
+  if(has("triste","nostalg","melanc","tris","sombre","dark")) st.mineur = true;
+  if(has("joyeux","happy","fete","danse","dance","gai")) st.mineur = false;
+  if(has("rapide","vit","fast")) st.bpm += 20;
+  if(has("lent","slow")) st.bpm -= 15;
+  st.bpm = Math.max(60, Math.min(160, st.bpm));
+  return st;
+}
+function synthMusique(prompt, graine){
+  const sr = 22050, st = styleMusique(prompt);
+  let seed = 0; for(const c of prompt) seed = (seed * 31 + c.charCodeAt(0)) >>> 0; seed = (seed + graine * 7919) >>> 0;
+  const rnd = () => (seed = (seed * 1664525 + 1013904223) >>> 0) / 4294967296;
+  const pas = 60 / st.bpm / 4, mesure = pas * 16, NB = 16, N = Math.floor(sr * (mesure * NB + 1.5));
+  const buf = new Float32Array(N);
+  const gamme = st.mineur ? [0,2,3,5,7,8,10] : [0,2,4,5,7,9,11];
+  const prog = st.mineur ? [0,5,2,6] : [0,4,5,3];
+  const racine = 45 + Math.floor(rnd() * 7);
+  const midi = d => racine + gamme[((d % 7) + 7) % 7] + 12 * Math.floor(d / 7);
+  const fr = m => 440 * Math.pow(2, (m - 69) / 12);
+  const onde = (type, ph) => { ph -= Math.floor(ph); return type === 0 ? Math.sin(6.2832 * ph) : type === 1 ? 4 * Math.abs(ph - 0.5) - 1 : type === 2 ? 2 * ph - 1 : (ph < 0.5 ? 1 : -1); };
+  const note = (t0, dur, f, vol, type, atk, decay) => {
+    const i0 = Math.floor(t0 * sr), n = Math.min(Math.floor(dur * sr), N - i0);
+    for(let i = 0; i < n; i++){
+      const t = i / sr, env = Math.min(1, t / atk) * Math.exp(-t * decay) * Math.min(1, (dur - t) / 0.03);
+      buf[i0 + i] += onde(type, f * t) * vol * Math.max(0, env);
+    }
+  };
+  const kick = t0 => { const i0 = Math.floor(t0 * sr), n = Math.min(Math.floor(0.3 * sr), N - i0); let ph = 0;
+    for(let i = 0; i < n; i++){ const t = i / sr; ph += (45 + 90 * Math.exp(-t * 30)) / sr; buf[i0 + i] += Math.sin(6.2832 * ph) * Math.exp(-t * 11) * 0.9; } };
+  const bruit = (t0, dur, vol, decay, aigu) => { const i0 = Math.floor(t0 * sr), n = Math.min(Math.floor(dur * sr), N - i0); let prev = 0;
+    for(let i = 0; i < n; i++){ const b = rnd() * 2 - 1, x = aigu ? b - prev : b; prev = b; buf[i0 + i] += x * vol * Math.exp(-(i / sr) * decay); } };
+  const BOITES = {
+    kompa: {k:[0,8], s:[4,12], h:[0,2,4,6,8,10,12,14], b:[0,6,8,14]},
+    rara:  {k:[0,4,8,12], s:[4,12], h:[0,2,4,6,8,10,12,14], b:[0,4,8,12]},
+    rock:  {k:[0,8,10], s:[4,12], h:[0,2,4,6,8,10,12,14], b:[0,2,4,6,8,10,12,14]},
+    hiphop:{k:[0,7,10], s:[4,12], h:[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15], b:[0,10]},
+    calme: {k:[0], s:[], h:[], b:[0,8]},
+    pop:   {k:[0,8], s:[4,12], h:[0,2,4,6,8,10,12,14], b:[0,8]}
+  };
+  const bt = BOITES[st.boite];
+  for(let m = 0; m < NB; m++){
+    const t0 = m * mesure, deg = prog[m % 4];
+    [0,2,4].forEach(k => note(t0, mesure * 0.98, fr(midi(deg + k) + 12), 0.09, 1, 0.08, 0.15)); // accords
+    bt.b.forEach((sp, j) => note(t0 + sp * pas, pas * 2.2, fr(midi(deg) - 12 + (j % 2 && st.boite === "kompa" ? 7 : 0)), 0.32, 1, 0.005, 3)); // basse
+    bt.k.forEach(sp => kick(t0 + sp * pas));
+    bt.s.forEach(sp => { bruit(t0 + sp * pas, 0.18, 0.28, 24, false); note(t0 + sp * pas, 0.12, 190, 0.15, 0, 0.002, 30); });
+    bt.h.forEach(sp => bruit(t0 + sp * pas, 0.05, 0.10, 90, true));
+    if(m >= 2){ // melodie : marche aleatoire sur la gamme (les temps forts tombent sur l'accord)
+      let d = 7 + deg + [0,2,4][Math.floor(rnd() * 3)];
+      for(let sp = 0; sp < 16; sp += 2){
+        if(rnd() < 0.72){
+          d += Math.floor(rnd() * 5) - 2; if(d < 7) d = 7; if(d > 15) d = 15;
+          if(sp % 8 === 0) d = 7 + deg + [0,2,4][Math.floor(rnd() * 3)];
+          note(t0 + sp * pas, pas * (rnd() < 0.4 ? 4 : 2) * 0.95, fr(midi(d) + 12), 0.14, 3, 0.01, 4);
+        }
+      }
+    }
+  }
+  const fin = Math.floor(sr * 1.5); let pic = 0;
+  for(let i = 0; i < N; i++){ if(i > N - fin) buf[i] *= (N - i) / fin; pic = Math.max(pic, Math.abs(buf[i])); }
+  const g = pic > 0 ? 0.9 / pic : 1; for(let i = 0; i < N; i++) buf[i] *= g;
+  return {buf, sr, st};
+}
+function wavOctets(f32, sr){
+  const n = f32.length, o = new DataView(new ArrayBuffer(44 + n * 2));
+  const w = (a, t) => { for(let i = 0; i < t.length; i++) o.setUint8(a + i, t.charCodeAt(i)); };
+  w(0, "RIFF"); o.setUint32(4, 36 + n * 2, true); w(8, "WAVEfmt "); o.setUint32(16, 16, true); o.setUint16(20, 1, true); o.setUint16(22, 1, true);
+  o.setUint32(24, sr, true); o.setUint32(28, sr * 2, true); o.setUint16(32, 2, true); o.setUint16(34, 16, true); w(36, "data"); o.setUint32(40, n * 2, true);
+  for(let i = 0; i < n; i++) o.setInt16(44 + i * 2, Math.max(-1, Math.min(1, f32[i])) * 32767, true);
+  return o.buffer;
+}
+let _graine = 0;
+async function genererMusique(prompt){
+  const bulle = ajouterMsg("ai", "🎵 " + prompt);
+  bulle.classList.add("pending");
+  bulle.querySelector(".txt").innerHTML = '<div class="typing"><span></span><span></span><span></span></div>';
+  await new Promise(r => setTimeout(r, 60)); // laisse l'ecran afficher l'animation
+  try{
+    const r = synthMusique(prompt || "musique", ++_graine);
+    const blob = new Blob([wavOctets(r.buf, r.sr)], {type:"audio/wav"});
+    const media = {id:"a" + Date.now(), kind:"audio", prompt: prompt + " (" + r.st.nom + ", " + r.st.bpm + " bpm)"};
+    await mediaSave(media.id, blob);
+    lierMedia(bulle, media, blob);
+  }catch(e){
+    bulle.classList.remove("pending");
+    remplirMsg(bulle, "Impossible de créer la musique : " + e.message);
+  }
+}
+
+/* ---- Documents (Excel, Word, PDF, CSV, code...) créés par le serveur ---- */
+const iconeMedia = k => k === "audio" ? "🎵 " : k === "document" ? "📄 " : "🎨 ";
+const DOC_VERBE = "(?:fe|fais|faire|fabrique|fabriquer|cree|creer|creez|kreye|genere|generer|generez|prepare|preparer|redige|rediger|ecris|ecrire|produis|produire|voye|envoi|envoie|envoyer|donne|donner|bay|convertis|convertir|konverti|transforme|transformer|exporte|exporter|ekspote|make|create|generate|send|write|convert|export)\\b";
+const DOC_DEBUT = "^(?:(?:s'il (?:te|vous) plait|tanpri|svp|stp|please)\\s+)?" + DOC_VERBE + "(?:[\\s-]+(?:moi|mwen|m|nou|me|us))?\\s+(?:[\\w'’-]+\\s+){0,4}?";
+const DOC_FORT = new RegExp(DOC_DEBUT + "(?:pdf|word|docx|excel|xlsx|xls|csv|tableur|spreadsheet)\\b");
+const DOC_GENERIQUE = new RegExp(DOC_DEBUT.replace("(?:[\\w'’-]+\\s+){0,4}?", "(?:(?!(?:ce|cet|cette|ces|mon|ma|mes|ton|ta|tes|son|sa|ses)\\s)[\\w'’-]+\\s+){0,4}?") + "(?:documents?|dokiman)\\b");
+const DOC_LABEL = {xlsx:"Excel", docx:"Word", pdf:"PDF", csv:"CSV", txt:"Texte", md:"Markdown", html:"HTML", json:"JSON"};
+const DOC_TEXTE = /^(txt|md|csv|tsv|json|xml|html|htm|css|js|ts|jsx|py|java|php|sql|sh|bat|c|cpp|cs|go|rs|kt|swift|rb|yml|yaml|ini|log|svg|ics|vcf|srt|tex)$/;
+function demandeDocument(brut){
+  const n = norm(brut);
+  return DOC_FORT.test(n) || (agentActif !== "code" && !brut.includes("--- ") && DOC_GENERIQUE.test(n));
+}
+function tailleLisible(n){ return n < 1024 ? n + " o" : n < 1048576 ? Math.round(n / 1024) + " Ko" : (n / 1048576).toFixed(1) + " Mo"; }
+
+function carteTravail(zone){
+  zone.innerHTML = "";
+  const c = document.createElement("div"); c.className = "doc-card work";
+  c.innerHTML = '<div class="doc-top"><div class="doc-ico">···</div><div><div class="doc-nom">Création du document…</div>' +
+    '<div class="doc-meta">Knall prépare ton fichier</div></div></div>' +
+    '<ul class="doc-steps"><li class="on">Analyse de la demande</li><li>Écriture du contenu</li><li>Construction du fichier</li></ul>' +
+    '<div class="doc-bar"><i></i></div>';
+  zone.appendChild(c);
+  const li = c.querySelectorAll(".doc-steps li");
+  return i => li.forEach((x, k) => { x.className = k < i ? "ok" : k === i ? "on" : ""; });
+}
+
+function montrerDocument(bulle, media, blob){
+  const zone = bulle.querySelector(".txt"); zone.innerHTML = "";
+  const ext = String(media.ext || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+  const c = document.createElement("div"); c.className = "doc-card";
+  const top = document.createElement("div"); top.className = "doc-top";
+  const ico = document.createElement("div"); ico.className = "doc-ico t-" + ext; ico.textContent = ext.toUpperCase().slice(0, 4);
+  const inf = document.createElement("div");
+  const nom = document.createElement("div"); nom.className = "doc-nom"; nom.textContent = media.nom;
+  const meta = document.createElement("div"); meta.className = "doc-meta"; meta.textContent = (DOC_LABEL[ext] || ext.toUpperCase()) + " · " + tailleLisible(media.taille || blob.size);
+  inf.append(nom, meta); top.append(ico, inf); c.appendChild(top);
+  if(media.resume){ const r = document.createElement("div"); r.className = "doc-resume"; r.textContent = media.resume; c.appendChild(r); }
+  const b = document.createElement("div"); b.className = "btns";
+  const mk = (t, f) => { const x = document.createElement("button"); x.className = "act-btn"; x.textContent = t; x.onclick = () => f(x); b.appendChild(x); };
+  const lire = async () => (await blob.text()).replace(/^\uFEFF/, "");
+  if(DOC_TEXTE.test(ext)) mk("👁️ Voir", async () => ouvrirViewer(media.nom, await lire()));
+  if(ext === "html" || ext === "htm") mk("▶️ Aperçu", async () => ouvrirApercu({nom: media.nom, ext: "html", v: await lire()}, []));
+  mk("⬇️ Télécharger", x => sauverBlob(media.nom, blob, x, false));
+  mk("📤 Partager", x => sauverBlob(media.nom, blob, x, true));
+  c.appendChild(b); zone.appendChild(c);
+  const a = bulle.querySelector(".actions"); if(a) a.remove();
+  chat.scrollTop = chat.scrollHeight;
+}
+
+let _dernierDoc = null; // dernière fiche : permet « ajoute une colonne », « mets-le en PDF »
+async function creerDocument(demande){
+  const agent = agentActif;
+  const bulle = ajouterMsg("ai", "📄 …");
+  const a0 = bulle.querySelector(".actions"); if(a0) a0.remove();
+  const etape = carteTravail(bulle.querySelector(".txt"));
+  const t1 = setTimeout(() => etape(1), 1800);
+  const precedent = _dernierDoc && Date.now() - _dernierDoc.t < 15 * 60 * 1000 ? {demande: _dernierDoc.demande, fiche: _dernierDoc.fiche} : null;
+  const essai = async () => {
+    const ctl = new AbortController(), t = setTimeout(() => ctl.abort(), 120000);
+    try{
+      const res = await fetch(PROXY_URL.replace(/\/$/, "") + "/document", {
+        method: "POST", signal: ctl.signal,
+        headers: {"Content-Type": "application/json", "x-knall-token": APP_TOKEN},
+        body: JSON.stringify({agent, demande, contexte: (hist[agent] || []).slice(-4), precedent})
+      });
+      const d = await res.json().catch(() => ({}));
+      if(!res.ok) throw new Error(d.error || ("Erreur " + res.status));
+      return d;
+    }finally{ clearTimeout(t); }
+  };
+  try{
+    if(!PROXY_URL) throw new Error("serveur non configuré");
+    let d;
+    try{ d = await essai(); }
+    catch(e){ if(/Failed to fetch/.test(e.message)) d = await essai(); else throw e; } // 2e essai : serveur qui se réveille
+    clearTimeout(t1); etape(2);
+    const bin = atob(d.base64), u8 = new Uint8Array(bin.length);
+    for(let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
+    const blob = new Blob([u8], {type: d.mime});
+    const media = {id: "d" + Date.now(), kind: "document", prompt: d.nom, nom: d.nom, ext: d.ext, taille: d.taille, resume: d.resume || ""};
+    await mediaSave(media.id, blob);
+    bulle.dataset.raw = "Document : " + d.nom;
+    const v = threadActif().vues; v[v.length-1].texte = "[document] " + d.nom; v[v.length-1].media = media; sauverThreads();
+    await new Promise(r => setTimeout(r, 350));
+    montrerDocument(bulle, media, blob);
+    _dernierDoc = d.fiche ? {demande: demande.slice(0, 2000), fiche: d.fiche, t: Date.now()} : null;
+    memoriser(agent, demande, "📄 Document créé : " + d.nom + (d.resume ? " — " + d.resume : ""));
+  }catch(e){
+    clearTimeout(t1);
+    remplirMsg(bulle, "Impossible de créer le document : " + (e.name === "AbortError" ? "délai dépassé (le serveur dort peut-être, réessaie)" : e.message));
+    const v = threadActif().vues; v[v.length-1].texte = bulle.dataset.raw; sauverThreads();
+  }
+  chat.scrollTop = chat.scrollHeight;
+}
+
+/* ---- Chat ---- */
+const chat=document.getElementById('chat'), input=document.getElementById('msgInput');
+async function copierTexte(texte, btn){
+  let ok = false;
+  try{ await navigator.clipboard.writeText(texte); ok = true; }catch(e){}
+  if(!ok){
+    try{
+      const t = document.createElement('textarea'); t.value = texte; t.style.position = 'fixed'; t.style.opacity = '0';
+      document.body.appendChild(t); t.select(); ok = document.execCommand('copy'); t.remove();
+    }catch(e){}
+  }
+  if(btn){ const old = btn.innerHTML; btn.textContent = ok ? "✅ Copié" : "❌ Échec"; setTimeout(() => btn.innerHTML = old, 1400); }
+}
+function textePropre(raw){ // texte lisible partout (QuickEdit, WhatsApp…) : plus de ``` ni de **
+  const net = t => t.replace(/\*\*/g, "").replace(/`/g, "").replace(/^\s*#{1,4}\s+/gm, "").replace(/^(\s*)[-*]\s+/gm, "$1• ");
+  return extraireCode(raw).map(sg => sg.t === "texte" ? net(sg.v).trim()
+    : "──── " + sg.nom + " ────\n" + sg.v + "\n──────────").join("\n\n").replace(/\r/g, "");
+}
+async function partagerTexte(texte, btn){
+  texte = textePropre(texte);
+  if(navigator.share){ try{ await navigator.share({text: texte}); return; }catch(e){ if(e && e.name === "AbortError") return; } }
+  copierTexte(texte, btn); // pas de partage natif : on copie
+}
+/* ---- Code sous forme de fichiers (agent Code) ---- */
+const EXT = {html:"html",htm:"html",javascript:"js",js:"js",jsx:"jsx",typescript:"ts",ts:"ts",json:"json",css:"css",python:"py",py:"py",php:"php",java:"java",sql:"sql",bash:"sh",sh:"sh",xml:"xml",markdown:"md",md:"md",kotlin:"kt",c:"c",cpp:"cpp",csharp:"cs",yaml:"yml",yml:"yml",text:"txt",txt:"txt"};
+const MIMES = {html:"text/html", json:"application/json", css:"text/css", js:"text/javascript", xml:"application/xml", md:"text/markdown"};
+function extraireCode(texte){
+  if(((texte.match(/```/g) || []).length) % 2 === 1) texte += "\n```"; // reponse coupee : on ferme le bloc
+  const segs = [], re = /```([^\n`]*)\n([\s\S]*?)```/g;
+  let dernier = 0, m, n = 0;
+  while((m = re.exec(texte))){
+    let avant = texte.slice(dernier, m.index);
+    const parts = m[1].trim().split(/\s+/).filter(Boolean);
+    const langue = (parts[0] || "").toLowerCase();
+    let nom = parts.find(x => /^[\w.-]+\.[a-z0-9]+$/i.test(x));
+    if(!nom){ // titre juste avant le bloc : **index.html**
+      const ls = avant.replace(/\s+$/, "").split("\n"), der = (ls[ls.length-1] || "").replace(/[*`#:_\s]/g, "");
+      if(/^[\w.-]+\.[a-z0-9]{1,5}$/i.test(der)){ nom = der; ls.pop(); avant = ls.join("\n"); }
+    }
+    if(avant.trim()) segs.push({t:"texte", v:avant});
+    n++;
+    const ext = nom ? nom.split(".").pop().toLowerCase() : (EXT[langue] || "txt");
+    if(!nom) nom = "knall-code-" + n + "." + ext;
+    segs.push({t:"code", nom, ext, v:m[2].replace(/\n$/, "")});
+    dernier = re.lastIndex;
+  }
+  if(dernier < texte.length) segs.push({t:"texte", v:texte.slice(dernier)});
+  return segs;
+}
+async function telechargerFichier(nom, contenu, btn){
+  const flash = t => { if(btn){ const o = btn.innerHTML; btn.textContent = t; setTimeout(() => btn.innerHTML = o, 1600); } };
+  const P = window.Capacitor && window.Capacitor.Plugins;
+  if(P && P.Filesystem && P.Share){ // app Android : on écrit le fichier puis on ouvre le choix "Ouvrir avec…"
+    try{
+      const r = await P.Filesystem.writeFile({path:nom, data:contenu, directory:"CACHE", encoding:"utf8"});
+      await P.Share.share({title:nom, url:r.uri, dialogTitle:"Ouvrir avec…"});
+      return;
+    }catch(e){ if(e && /cancel/i.test(e.message || "")) return; }
+  }
+  try{ // navigateur : téléchargement classique
+    const blob = new Blob([contenu], {type: MIMES[nom.split(".").pop().toLowerCase()] || "text/plain"});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a"); a.href = url; a.download = nom;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 4000);
+    flash("✅ Téléchargé");
+  }catch(e){ copierTexte(contenu, btn); }
+}
+function ouvrirViewer(nom, contenu){
+  $("viewerNom").textContent = nom;
+  const zone = $("viewerCode"); zone.textContent = "";
+  const frag = document.createDocumentFragment();
+  contenu.split("\n").forEach((l, i) => {
+    const d = document.createElement("div"); d.className = "ligne";
+    const a = document.createElement("span"); a.className = "num"; a.textContent = i + 1;
+    const b = document.createElement("span"); b.className = "cod"; b.textContent = l || " ";
+    d.append(a, b); frag.appendChild(d);
+  });
+  zone.appendChild(frag); zone.scrollTop = 0;
+  $("viewerCopy").onclick = () => copierTexte(contenu, $("viewerCopy"));
+  $("viewerDl").onclick = () => telechargerFichier(nom, contenu, $("viewerDl"));
+  $("viewerClose").onclick = () => $("viewer").classList.remove("open");
+  $("viewer").classList.add("open");
+}
+/* ---- Aperçu visuel d'une app HTML (css/js des autres blocs du message intégrés) ---- */
+function assemblerApp(seg, tous){
+  const base = x => x.split("/").pop().toLowerCase();
+  const csss = tous.filter(x => x.ext === "css"), jss = tous.filter(x => x.ext === "js");
+  const utilises = new Set();
+  const prendre = (liste, ref) => {
+    let f = liste.find(x => base(x.nom) === base(ref));
+    if(!f) f = liste.find(x => !utilises.has(x));
+    if(f) utilises.add(f); return f;
+  };
+  let h = seg.v;
+  h = h.replace(/<link\b[^>]*href=["']([^"']+\.css)["'][^>]*>/gi, (mm, ref) => {
+    const f = prendre(csss, ref); return f ? "<style>\n" + f.v + "\n</style>" : mm;
+  });
+  h = h.replace(/<script\b[^>]*src=["']([^"']+\.js)["'][^>]*>\s*<\/script>/gi, (mm, ref) => {
+    const f = prendre(jss, ref); return f ? "<script>\n" + f.v.replace(/<\/script/gi, "<\\/script") + "\n<\/script>" : mm;
+  });
+  csss.concat(jss).forEach(f => { // css/js sans balise dans le html : on les ajoute
+    if(utilises.has(f)) return;
+    const bloc = f.ext === "css" ? "<style>\n" + f.v + "\n</style>" : "<script>\n" + f.v.replace(/<\/script/gi, "<\\/script") + "\n<\/script>";
+    h = /<\/body>/i.test(h) ? h.replace(/<\/body>/i, bloc + "\n</body>") : h + "\n" + bloc;
+  });
+  if(!/<meta[^>]+viewport/i.test(h)) h = h.replace(/<head[^>]*>/i, m => m + '<meta name="viewport" content="width=device-width, initial-scale=1">');
+  return h;
+}
+function ouvrirApercu(seg, tous){
+  const html = assemblerApp(seg, tous);
+  $("apercuNom").textContent = "▶️ " + seg.nom;
+  const fr = $("apercuFrame"); fr.srcdoc = html;
+  const nomApp = seg.nom.replace(/\.html?$/i, "") + "-app.html";
+  $("apercuReload").onclick = () => { fr.srcdoc = ""; setTimeout(() => fr.srcdoc = html, 30); };
+  $("apercuDl").onclick = () => telechargerFichier(nomApp, html, $("apercuDl"));
+  $("apercuShare").onclick = async () => {
+    try{
+      const f = new File([html], nomApp, {type:"text/html"});
+      if(navigator.canShare && navigator.canShare({files:[f]})){ await navigator.share({files:[f], title:nomApp}); return; }
+    }catch(e){ if(e && e.name === "AbortError") return; }
+    telechargerFichier(nomApp, html, $("apercuShare"));
+  };
+  $("apercuClose").onclick = () => { $("apercu").classList.remove("open"); fr.srcdoc = ""; };
+  $("apercu").classList.add("open");
+}
+function carteFichier(seg, tous){
+  const c = document.createElement("div"); c.className = "fichier";
+  const n = document.createElement("div"); n.className = "nom"; n.textContent = "📄 " + seg.nom;
+  const nb = seg.v.split("\n").length;
+  const m = document.createElement("div"); m.className = "meta"; m.textContent = nb + " ligne" + (nb > 1 ? "s" : "") + " · " + seg.ext.toUpperCase();
+  const b = document.createElement("div"); b.className = "btns";
+  const voir = document.createElement("button"); voir.className = "act-btn"; voir.textContent = "👁️ Voir";
+  const dl = document.createElement("button"); dl.className = "act-btn"; dl.textContent = "⬇️ Télécharger";
+  voir.onclick = () => ouvrirViewer(seg.nom, seg.v);
+  dl.onclick = () => telechargerFichier(seg.nom, seg.v, dl);
+  if(seg.ext === "html" || seg.ext === "htm"){
+    const ap = document.createElement("button"); ap.className = "act-btn"; ap.textContent = "▶️ Aperçu";
+    ap.onclick = () => ouvrirApercu(seg, tous || [seg]);
+    b.append(ap);
+  }
+  b.append(voir, dl); c.append(n, m, b);
+  return c;
+}
+/* ---- Rendu Markdown minimal (gras, titres, tableaux, listes) — 100% hors ligne ---- */
+function escHtml(s){ return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+function estImageUrl(url){ return /\.(png|jpe?g|gif|webp|svg)(\?[^\s]*)?$/i.test(url); }
+function cadreImage(q, url){
+  const a = s => String(s||"").replace(/"/g, "&quot;");
+  return '<div class="img-frame" data-q="'+a(q)+'" data-u="'+a(url)+'"><div class="img-load">🔍 Recherche de l\'image…</div></div>';
+}
+function lienHtml(url, texte){
+  const safe = url.replace(/"/g, "%22");
+  if(estImageUrl(url)) return cadreImage("", url);
+  return '<a href="'+safe+'" target="_blank" rel="noopener noreferrer">'+(texte||url)+'</a>';
+}
+function inlineMd(s){
+  s = escHtml(s);
+  const cadres = [];   // les cadres d'image sont mis de côté pour ne pas être re-transformés en liens
+  const garde = html => "\uE010" + (cadres.push(html) - 1) + "\uE011";
+  s = s.replace(/\[\[\s*IMG\s*:\s*([^\]]+?)\s*\]\]/gi, (m, q) => garde(cadreImage(q, "")));
+  s = s.replace(/!\[([^\]]*)\]\((https?:\/\/[^\s)]+)\)/g, (m, alt, url) => garde(cadreImage(alt, url)));
+  s = s.replace(/`([^`]+)`/g, '<code>$1</code>');
+  s = s.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+  s = s.replace(/`/g, "");  // backtick isole (reponse coupee)
+  s = s.replace(/(^|[^*\w])\*(?=[^\s*])([^*\n]*[^\s*])\*(?!\*)/g, '$1<em>$2</em>');
+  s = s.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)|(https?:\/\/[^\s<]+[^\s<.,;:!?)])/g,
+    (m, txt, url1, url2) => { const u = url1 || url2; return estImageUrl(u) ? garde(cadreImage("", u)) : lienHtml(u, txt); });
+  return s.replace(/\uE010(\d+)\uE011/g, (m, n) => cadres[+n]);
+}
+const RE_ITEM = /^(\s*)([-*•]|\d+[.)])\s+(.*)$/;
+function lireListe(lignes, i){
+  const items = [];
+  while(i < lignes.length){
+    const l = lignes[i], m = l.match(RE_ITEM);
+    if(m){ items.push({ind: m[1].replace(/\t/g, "    ").length, ord: /\d/.test(m[2]), num: parseInt(m[2], 10), txt: [m[3]]}); i++; continue; }
+    if(l.trim() === ""){
+      let j = i + 1; while(j < lignes.length && lignes[j].trim() === "") j++;
+      if(items.length && j < lignes.length && (RE_ITEM.test(lignes[j]) || /^\s{2,}\S/.test(lignes[j]))){ i = j; continue; }
+      break;
+    }
+    if(items.length && /^\s{2,}\S/.test(l)){ items[items.length - 1].txt.push(l.trim()); i++; continue; }
+    break;
+  }
+  let pos = 0;
+  const bloc = ind => {
+    const ord = items[pos].ord, tag = ord ? "ol" : "ul", n0 = items[pos].num;
+    let h = "<" + tag + (ord && n0 > 1 ? ' start="' + n0 + '"' : "") + ">";
+    while(pos < items.length && items[pos].ind === ind && items[pos].ord === ord){
+      const it = items[pos++];
+      let li = it.txt.map(inlineMd).join("<br>");
+      if(pos < items.length && items[pos].ind > ind) li += bloc(items[pos].ind);
+      h += "<li>" + li + "</li>";
+    }
+    return h + "</" + tag + ">";
+  };
+  let html = "";
+  while(pos < items.length) html += bloc(items[pos].ind);
+  return {html, i};
+}
+function ligneTable(l){
+  let c = l.trim(); if(c.startsWith("|")) c = c.slice(1); if(c.endsWith("|")) c = c.slice(0,-1);
+  return c.split("|").map(x => x.trim());
+}
+/* ---- Formules mathématiques (KaTeX) : \[ .. \]  \( .. \)  $$ .. $$  $ .. $ ---- */
+function texLisible(t){
+  let s = t, avant;
+  do{ avant = s; s = s.replace(/\\[dt]?frac\{([^{}]*)\}\{([^{}]*)\}/g, "($1)/($2)").replace(/\\sqrt\{([^{}]*)\}/g, "√($1)"); }while(s !== avant);
+  return s.replace(/\\times/g,"×").replace(/\\cdot/g,"·").replace(/\\div/g,"÷").replace(/\\(?:le|leq)\b/g,"≤").replace(/\\(?:ge|geq)\b/g,"≥")
+    .replace(/\\neq?\b/g,"≠").replace(/\\pi\b/g,"π").replace(/\\(?:left|right)/g,"").replace(/\\cancel\{([^{}]*)\}/g,"$1")
+    .replace(/\{,\}/g,",").replace(/\\[,;! ]/g," ").replace(/[{}]/g,"");
+}
+function katexHtml(tex, display){
+  try{ if(window.katex) return katex.renderToString(tex, {displayMode: display, throwOnError: false, strict: false, trust: false}); }catch(e){}
+  return "<code>" + escHtml(texLisible(tex)) + "</code>";   // hors connexion : version lisible sans KaTeX
+}
+function extraireMaths(t){
+  const rendus = [];
+  const garde = (tex, aff) => { rendus.push(katexHtml(tex.trim(), aff)); return "\uE000" + (aff ? "D" : "I") + (rendus.length - 1) + "\uE001"; };
+  const parts = t.split(/(```[\s\S]*?```|`[^`\n]*`)/);   // jamais de maths dans le code
+  const out = parts.map((p, i) => i % 2 ? p : p
+    .replace(/\\\[([\s\S]+?)\\\]/g, (_, m) => garde(m, true))
+    .replace(/\$\$([\s\S]+?)\$\$/g, (_, m) => garde(m, true))
+    .replace(/\\\(([\s\S]+?)\\\)/g, (_, m) => garde(m, false))
+    .replace(/(^|[^\\$\w])\$([^\s$](?:[^$\n]*?[^\s$])?)\$(?![\w$])/g, (all, pre, m) => /[\\^_=]/.test(m) ? pre + garde(m, false) : all)
+  ).join("");
+  return {texte: out, rendus};
+}
+function renduMarkdown(texte){
+  const M = extraireMaths(texte);
+  return renduMarkdownBrut(M.texte)
+    .replace(/<p>(\uE000D\d+\uE001)<\/p>/g, "$1")
+    .replace(/\uE000([DI])(\d+)\uE001/g, (_, k, n) => k === "D" ? '<span class="kdisp">' + M.rendus[+n] + '</span>' : M.rendus[+n]);
+}
+
+function renduMarkdownBrut(texte){
+  const lignes = texte.replace(/\r\n/g,"\n").split("\n");
+  let html = "", i = 0;
+  while(i < lignes.length){
+    const l = lignes[i];
+    if(l.trim() === ""){ i++; continue; }
+    // tableau : ligne d'en-tete + ligne de separation ---|---
+    if(/^\s*\|.*\|\s*$/.test(l) && lignes[i+1] && /^\s*\|?\s*:?-{2,}:?\s*(\|\s*:?-{2,}:?\s*)*\|?\s*$/.test(lignes[i+1])){
+      const ent = ligneTable(l); i += 2;
+      const corps = [];
+      while(i < lignes.length && /^\s*\|.*\|\s*$/.test(lignes[i])){ corps.push(ligneTable(lignes[i])); i++; }
+      html += '<div class="tbl-wrap"><table><thead><tr>' + ent.map(h => "<th>"+inlineMd(h)+"</th>").join("") +
+        "</tr></thead><tbody>" + corps.map(r => "<tr>"+r.map(c => "<td>"+inlineMd(c||"")+"</td>").join("")+"</tr>").join("") +
+        "</tbody></table></div>";
+      continue;
+    }
+    // titres
+    const hm = l.match(/^(#{1,4})\s+(.*)/);
+    if(hm){ const n = hm[1].length + 1; html += "<h"+n+">"+inlineMd(hm[2])+"</h"+n+">"; i++; continue; }
+    // ligne de séparation (--- *** ___)
+    if(/^\s*([-*_])(\s*\1){2,}\s*$/.test(l)){ html += "<hr>"; i++; continue; }
+    // citation
+    if(/^\s*>\s?/.test(l)){
+      const q = [];
+      while(i < lignes.length && /^\s*>\s?/.test(lignes[i])){ q.push(lignes[i].replace(/^\s*>\s?/, "")); i++; }
+      html += "<blockquote><p>" + q.map(inlineMd).join("<br>") + "</p></blockquote>";
+      continue;
+    }
+    // listes (imbriquées, numérotées ou à puces)
+    if(RE_ITEM.test(l)){
+      const r = lireListe(lignes, i); html += r.html; i = r.i;
+      continue;
+    }
+    // paragraphe (accumule les lignes simples qui se suivent)
+    const para = [l]; i++;
+    while(i < lignes.length && lignes[i].trim() !== "" && !/^\s*\|/.test(lignes[i]) && !/^#{1,4}\s/.test(lignes[i]) &&
+          !RE_ITEM.test(lignes[i]) && !/^\s*>/.test(lignes[i]) && !/^\s*([-*_])(\s*\1){2,}\s*$/.test(lignes[i])){
+      para.push(lignes[i]); i++;
+    }
+    html += "<p>" + para.map(inlineMd).join("<br>") + "</p>";
+  }
+  return html;
+}
+
+/* ---- Images dans les réponses : on teste l'image, sinon on en cherche une autre (serveur /photos) ---- */
+const _cachePhotos = new Map();
+function testerImage(url){
+  return new Promise(ok => {
+    const im = new Image(); let fini = false;
+    const fin = v => { if(!fini){ fini = true; ok(v); } };
+    im.onload = () => fin(im.naturalWidth >= 80 && im.naturalHeight >= 60);
+    im.onerror = () => fin(false);
+    setTimeout(() => fin(false), 15000);
+    im.referrerPolicy = "no-referrer";
+    im.src = url;
+  });
+}
+async function chercherPhotosServeur(q){
+  if(_cachePhotos.has(q)) return _cachePhotos.get(q);
+  let liste = [];
+  try{
+    const r = await fetch(PROXY_URL.replace(/\/$/, "") + "/photos?q=" + encodeURIComponent(q) + "&n=6", {headers:{"x-knall-token": APP_TOKEN}});
+    const d = await r.json().catch(() => ({}));
+    liste = (d.photos || []).map(p => p.url);
+  }catch(e){}
+  if(liste.length) _cachePhotos.set(q, liste);
+  return liste;
+}
+async function telechargerImageUrl(url, btn){
+  try{
+    const r = await fetch(url); const b = await r.blob();
+    const nom = "knall-image-" + Date.now().toString().slice(-5) + "." + ((b.type.split("/")[1] || "jpg").replace("jpeg","jpg").replace("svg+xml","svg"));
+    await sauverBlob(nom, b, btn, false);
+  }catch(e){
+    const P = window.Capacitor && window.Capacitor.Plugins;
+    if(P && P.Share){ try{ await P.Share.share({title:"Image", url}); return; }catch(_){} }
+    window.open(url, "_blank", "noopener");
+  }
+}
+async function resoudreImage(fr){
+  if(fr.dataset.fait) return; fr.dataset.fait = "1";
+  const q = (fr.dataset.q || "").trim(), u0 = fr.dataset.u || "";
+  const essayes = new Set(); let file = u0 ? [u0] : [], serveurFait = false, courante = null;
+  async function suivante(){
+    for(;;){
+      if(!file.length){
+        if(serveurFait || !q) return null;
+        serveurFait = true;
+        file = (await chercherPhotosServeur(q)).filter(u => !essayes.has(u));
+        if(!file.length) return null;
+      }
+      const u = file.shift(); essayes.add(u);
+      if(await testerImage(u)) return u;
+    }
+  }
+  function afficher(url){
+    courante = url; fr.innerHTML = "";
+    const img = document.createElement("img"); img.alt = q || "image"; img.src = url; img.referrerPolicy = "no-referrer";
+    const bar = document.createElement("div"); bar.className = "img-bar";
+    const dl = document.createElement("button"); dl.textContent = "⬇ Télécharger"; dl.onclick = () => telechargerImageUrl(courante, dl);
+    bar.append(dl);
+    if(q){
+      const autre = document.createElement("button"); autre.textContent = "🔄 Autre image";
+      autre.onclick = async () => {
+        autre.disabled = true; autre.textContent = "…";
+        const u = await suivante();
+        if(u){ afficher(u); } else { autre.textContent = "Plus d'autre image"; }
+      };
+      bar.append(autre);
+    }
+    fr.append(img, bar);
+  }
+  const u = await suivante();
+  if(u) afficher(u);
+  else fr.innerHTML = '<div class="img-load">Aucune image trouvée' + (q ? ' pour « ' + escHtml(q) + ' »' : '') + '.</div>';
+}
+function resoudreImages(racine){ racine.querySelectorAll(".img-frame[data-q]:not([data-fait])").forEach(fr => { resoudreImage(fr); }); }
+
+function remplirMsg(d, texte){
+  d.dataset.raw = texte;
+  const s = d.querySelector(".txt"); s.textContent = ""; s.innerHTML = "";
+  if(d.classList.contains("ai") && texte.includes("```")){
+    const tousSegs = extraireCode(texte), segsCode = tousSegs.filter(x => x.t === "code");
+    tousSegs.forEach(seg => {
+      if(seg.t === "texte"){
+        const v = seg.v.trim();
+        if(v){ const div = document.createElement("div"); div.className = "md"; div.innerHTML = renduMarkdown(v); s.appendChild(div); resoudreImages(div); }
+      }else s.appendChild(carteFichier(seg, segsCode));
+    });
+  }else if(d.classList.contains("ai")){
+    s.innerHTML = renduMarkdown(texte);
+    s.className = "txt md";
+    resoudreImages(s);
+  }else{
+    s.textContent = texte;
+  }
+}
+
+/* ================= Icônes SVG (remplace les emoji des boutons) ================= */
+const ICONES = {"copy": "<rect x=\"9\" y=\"9\" width=\"11\" height=\"11\" rx=\"2\"/><path d=\"M5 15V6a2 2 0 0 1 2-2h9\"/>", "share": "<path d=\"M12 16V4M7 9l5-5 5 5\"/><path d=\"M5 14v4a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4\"/>", "listen": "<path d=\"M11 5L6 9H3v6h3l5 4z\"/><path d=\"M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13\"/>", "stop": "<rect x=\"6\" y=\"6\" width=\"12\" height=\"12\" rx=\"2\"/>", "download": "<path d=\"M12 4v11M7 11l5 5 5-5\"/><path d=\"M5 20h14\"/>", "save": "<path d=\"M5 3h11l3 3v13a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z\"/><path d=\"M7 3v5h8V3M7 21v-7h10v7\"/>", "eye": "<path d=\"M1.5 12S5.5 5 12 5s10.5 7 10.5 7-4 7-10.5 7S1.5 12 1.5 12z\"/><circle cx=\"12\" cy=\"12\" r=\"3\"/>", "play": "<path d=\"M7 4.5v15l12-7.5z\"/>", "refresh": "<path d=\"M20 11a8 8 0 0 0-14.5-4M4 5v4h4\"/><path d=\"M4 13a8 8 0 0 0 14.5 4M20 19v-4h-4\"/>", "check": "<path d=\"M5 12.5l4.5 4.5L19 7\"/>", "x": "<path d=\"M6 6l12 12M18 6L6 18\"/>", "image": "<rect x=\"3\" y=\"4\" width=\"18\" height=\"16\" rx=\"2.5\"/><circle cx=\"9\" cy=\"10\" r=\"1.6\"/><path d=\"M21 16l-5-5-8 8\"/>", "camera": "<path d=\"M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z\"/><circle cx=\"12\" cy=\"13\" r=\"4\"/>", "palette": "<path d=\"M12 3a9 9 0 1 0 0 18c1.3 0 2-.9 2-1.9 0-.5-.2-.9-.5-1.3-.3-.4-.5-.8-.5-1.3 0-1 .8-1.8 1.8-1.8H17a4 4 0 0 0 4-4C21 6.5 17 3 12 3z\"/><circle cx=\"7.5\" cy=\"11\" r=\"1\"/><circle cx=\"10\" cy=\"7\" r=\"1\"/><circle cx=\"15\" cy=\"7.5\" r=\"1\"/>", "pencil": "<path d=\"M4 20l1-4L16.5 4.5a2 2 0 0 1 3 3L8 19z\"/><path d=\"M14 7l3 3\"/>", "sparkle": "<path d=\"M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z\"/>", "file": "<path d=\"M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z\"/><path d=\"M14 3v5h5M9 13h6M9 17h6\"/>", "music": "<path d=\"M9 18V6l11-2v12\"/><circle cx=\"6.5\" cy=\"18\" r=\"2.5\"/><circle cx=\"17.5\" cy=\"16\" r=\"2.5\"/>", "lock": "<rect x=\"5\" y=\"11\" width=\"14\" height=\"10\" rx=\"2\"/><path d=\"M8 11V8a4 4 0 0 1 8 0v3\"/>", "clip": "<path d=\"M21 11.5l-8.6 8.6a5.5 5.5 0 0 1-7.8-7.8l8.6-8.6a3.7 3.7 0 0 1 5.2 5.2l-8.6 8.6a1.8 1.8 0 0 1-2.6-2.6l7.9-7.9\"/>", "search": "<circle cx=\"11\" cy=\"11\" r=\"6.5\"/><path d=\"M20 20l-4.2-4.2\"/>", "bot": "<rect x=\"4\" y=\"8\" width=\"16\" height=\"12\" rx=\"3\"/><path d=\"M12 8V5M9 13v1.5M15 13v1.5\"/><circle cx=\"12\" cy=\"4\" r=\"1\"/>", "tasks": "<rect x=\"5\" y=\"4\" width=\"14\" height=\"17\" rx=\"2\"/><path d=\"M9 4h6v3H9zM9 12h6M9 16h4\"/>", "code": "<path d=\"M8 8l-5 4 5 4M16 8l5 4-5 4M14 5l-4 14\"/>", "pen": "<path d=\"M12 20h9\"/><path d=\"M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z\"/>", "globe": "<circle cx=\"12\" cy=\"12\" r=\"9\"/><path d=\"M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18\"/>", "wifioff": "<path d=\"M2 8.8a15 15 0 0 1 4-2.5M22 8.8a15 15 0 0 0-8.5-3.7M5 12.9a10 10 0 0 1 3.5-2M16.5 11a10 10 0 0 1 2.5 1.9M8.5 16.4a5 5 0 0 1 7 0M12 20h.01M3 3l18 18\"/>", "book": "<path d=\"M4 4.5A2.5 2.5 0 0 1 6.5 2H20v16H6.5A2.5 2.5 0 0 0 4 20.5z\"/><path d=\"M4 20.5A1.5 1.5 0 0 0 5.5 22H20\"/>", "cloud": "<path d=\"M17.5 17.5a4 4 0 0 0 .5-8A6 6 0 0 0 6.4 8.9 4.6 4.6 0 0 0 7 18\"/><path d=\"M12 12v8M9 17l3 3 3-3\"/>", "trash": "<path d=\"M4 7h16M10 11v6M14 11v6M6 7l1 13a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-13M9 7V4h6v3\"/>", "half": "<circle cx=\"12\" cy=\"12\" r=\"9\"/><path d=\"M12 3v18a9 9 0 0 0 0-18z\" fill=\"currentColor\"/>", "db": "<ellipse cx=\"12\" cy=\"6\" rx=\"8\" ry=\"3\"/><path d=\"M4 6v6c0 1.7 3.6 3 8 3s8-1.3 8-3V6M4 12v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6\"/>", "gear": "<circle cx=\"12\" cy=\"12\" r=\"3\"/><path d=\"M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1\"/>"};
+const EMO_ICONE = {"📋": "copy", "📤": "share", "🔊": "listen", "⏹": "stop", "⬇": "download", "💾": "save", "👁": "eye", "▶": "play", "🔄": "refresh", "✅": "check", "❌": "x", "✕": "x", "🖼": "image", "📷": "camera", "🎨": "palette", "✏": "pencil", "✨": "sparkle", "📄": "file", "🎵": "music", "🔒": "lock", "📎": "clip", "🔍": "search", "🤖": "bot", "🗂": "tasks", "💻": "code", "✍": "pen", "🌐": "globe", "📴": "wifioff", "📚": "book", "☁": "cloud", "🗑": "trash", "🧹": "trash", "◐": "half"};
+const RE_EMO_ICONE = new RegExp("^\\s*(" + Object.keys(EMO_ICONE).join("|") + ")\uFE0F?\\s*");
+const SEL_ICONE = "button, .pill, .nom, .lock, .sheet-head b, #fichierNom, #apercuNom";
+function svgIcone(n){ return '<svg class="ic" viewBox="0 0 24 24">' + ICONES[n] + '</svg>'; }
+function iconiser(el){
+  if(!el || el.nodeType !== 1 || el.querySelector("svg") || el.children.length) return;
+  const t = el.textContent, m = RE_EMO_ICONE.exec(t); if(!m) return;
+  const reste = t.slice(m[0].length);
+  el.innerHTML = svgIcone(EMO_ICONE[m[1]]) + (reste ? "<span></span>" : "");
+  if(reste) el.lastChild.textContent = reste;
+}
+function iconiserTout(racine){
+  if(racine.matches && racine.matches(SEL_ICONE)) iconiser(racine);
+  racine.querySelectorAll && racine.querySelectorAll(SEL_ICONE).forEach(iconiser);
+}
+iconiserTout(document.body);
+new MutationObserver(muts => {
+  for(const m of muts){
+    if(m.type === "childList"){
+      const c = m.target.closest && m.target.closest(SEL_ICONE); if(c) iconiser(c);
+      m.addedNodes.forEach(n => { if(n.nodeType === 1) iconiserTout(n); });
+    }
+  }
+}).observe(document.body, {childList:true, subtree:true});
+
+/* ================= 🔊 ÉCOUTER — lecture vocale (français / anglais / kreyòl) ================= */
+/* Le téléphone n'a pas de voix créole. On lit donc le kreyòl avec une voix FRANÇAISE,
+   après avoir « réécrit » chaque mot comme le français le prononcera correctement.
+   Pour corriger une prononciation : ajoute une ligne dans MOTS_KREYOL (mots exacts)
+   ou dans REGLES_KREYOL (règles générales). */
+
+// 1) Mots exacts (priorité maximale) : kreyòl -> écriture « française » qui se prononce pareil
+const MOTS_KREYOL = {
+  "mwen":"mouin", "renmen":"rinmin", "m":"m", "ou":"ou", "li":"li", "nou":"nou", "yo":"yo", "se":"sé", "sa":"sa",
+  "ki":"ki", "nan":"nan", "pou":"pou", "gen":"guin", "men":"min", "te":"té",
+  "ap":"ap", "pral":"pral", "pa":"pa", "ak":"ak", "tout":"tou", "kounye":"kounyé", "a":"a",
+  "mèsi":"mèssi", "tanpri":"tan pri", "paske":"passké", "bay":"baï", "kay":"kaï", "lakay":"lakaï",
+  "ayiti":"aïti", "ayisyen":"aïsyin", "ayisyèn":"aïsyèn", "kreyòl":"kréyol", "kreyol":"kréyol",
+  "eske":"èsk", "moun":"moun", "bonjou":"bonjou", "bonswa":"bonsoir", "wi":"oui", "non":"non",
+  "pwoblèm":"proublèm", "dokiman":"dokiman", "telefòn":"télèfon", "entènèt":"intèrnèt",
+  "sèvè":"sèrvèr", "kòd":"kod", "fè":"fè", "vle":"vlé", "kapab":"kapab", "dwe":"dwé",
+  "lè":"lè", "tankou":"tan kou", "poukisa":"poukissa", "kisa":"kissa", "kijan":"ki jan",
+  "anpil":"anpil", "byen":"bien", "pi":"pi", "toujou":"toujou", "jodi":"jodi", "demen":"démin",
+  "yè":"yèr", "isit":"issit", "la":"la", "tèt":"tèt", "bagay":"bagaï", "youn":"youn"
+};
+
+// 2) Règles générales (appliquées dans l'ordre, sur un mot en minuscules)
+const REGLES_KREYOL = [
+  [/ay/g, "aï"], [/ey/g, "èï"], [/oy/g, "oï"],                       // ay, ey, oy : le y se prononce
+  [/enn/g, "ène"], [/onn/g, "one"], [/ann/g, "ane"], [/ounn/g, "oune"], // « nn » = voyelle orale + n
+  [/en(?![aeiouyèòéànm])/g, "in"],                                    // en nasal = [ɛ̃] → « in »
+  [/w(?=[aeiouèòé])/g, "ou"], [/w/g, "ou"],                           // w = ou (wa, wè, wi, aw...)
+  [/ò/g, "o"],                                                        // ò = o ouvert
+  [/g(?=[eiè])/g, "gu"],                                              // g toujours dur : ge → gue, gi → gui
+  [/([aeiouyèòéàâêîôû])s(?=[aeiouyèòéàâêîôû])/g, "$1ss"],            // s entre voyelles = s (pas z)
+  [/e$/g, "é"],                                                       // e final = é (jamais muet)
+];
+
+/* ---- Détection de langue (par phrase) ---- */
+const MARQ_KREYOL = new Set("mwen nou yo li pa se ki nan ak pou tout gen kote sa yon sou lè tankou paske men bay fè ap te pral konnen kounye poukisa anpil byen tanpri mèsi bonjou bonswa lakay moun bagay kreyòl kreyol ayiti eske dwe vle kapab ka wi non tèt jodi demen isit kisa kijan youn yè pwoblèm sèvè dokiman fòk fòk nap sak pase map".split(" "));
+const MARQ_FR = new Set("le la les un une des est sont je tu il elle nous vous ils elles que qui dans pour avec sur pas mais ou et donc car ce cette ces mon ma mes ton ta tes son sa ses du au aux ne plus très être avoir faire peut peux veux dois comme aussi bien merci bonjour".split(" "));
+const MARQ_EN = new Set("the is are was were you your i we they it this that with for and but not have has can will would should what how why please thanks hello of to in on at as be do does".split(" "));
+function mots(t){ return (t.toLowerCase().match(/[\p{L}']+/gu) || []); }
+function detecterLangue(t){
+  const m = mots(t); let k = 0, f = 0, e = 0;
+  m.forEach(w => { if(MARQ_KREYOL.has(w)) k++; if(MARQ_FR.has(w)) f++; if(MARQ_EN.has(w)) e++; });
+  if(/[òÒ]/.test(t)) k += 2;
+  if(/\b(?:mwen|nou|yo)\b/i.test(t)) k += 1;
+  if(k >= 2 && k >= f && k >= e) return "ht";
+  if(k >= 1 && k > f && k > e) return "ht";
+  if(e > f && e > k) return "en";
+  return "fr";
+}
+
+/* ---- Réécriture kreyòl → prononciation française ---- */
+function kreyolVersFrancais(t){
+  return t.replace(/[\p{L}']+/gu, mot => {
+    const bas = mot.toLowerCase();
+    let r;
+    if(Object.prototype.hasOwnProperty.call(MOTS_KREYOL, bas)) r = MOTS_KREYOL[bas];
+    else { r = bas; for(const [re, to] of REGLES_KREYOL) r = r.replace(re, to); }
+    return r;
+  });
+}
+
+/* ---- Nettoyage du texte avant lecture ---- */
+function texteALire(raw){
+  return String(raw || "")
+    .replace(/```[\s\S]*?```/g, " (code) ")
+    .replace(/\[\[\s*IMG\s*:[^\]]*\]\]/gi, " ")
+    .replace(/!\[[^\]]*\]\([^)]*\)/g, " ")
+    .replace(/\[([^\]]+)\]\([^)]*\)/g, "$1")
+    .replace(/https?:\/\/\S+/g, " lien ")
+    .replace(/^\s*\|.*\|\s*$/gm, " ")
+    .replace(/^\s{0,3}#{1,6}\s*/gm, "")
+    .replace(/^\s*[-*•]\s+/gm, "")
+    .replace(/[*_`~>]/g, "")
+    .replace(/[\u{1F000}-\u{1FFFF}\u{2600}-\u{27BF}\u{FE0F}]/gu, " ")
+    .replace(/[ \t]+/g, " ").replace(/\n{2,}/g, ". ").replace(/\n/g, ", ").trim();
+}
+function decouper(t, max){
+  const phrases = t.split(/(?<=[.!?…:;])\s+/), out = []; let cur = "";
+  for(const p of phrases){
+    if((cur + " " + p).length > max && cur){ out.push(cur.trim()); cur = p; } else cur += " " + p;
+  }
+  if(cur.trim()) out.push(cur.trim());
+  return out.flatMap(x => x.length <= max ? [x] : x.match(new RegExp(".{1," + max + "}(\\s|$)", "g")) || [x]);
+}
+
+/* ---- Lecture ---- */
+let _voixListe = [], _lectureEnCours = null;
+function chargerVoix(){ try{ _voixListe = speechSynthesis.getVoices() || []; }catch(e){} }
+if("speechSynthesis" in window){ chargerVoix(); speechSynthesis.onvoiceschanged = chargerVoix; }
+function choisirVoix(lang){
+  const grp = lang === "en" ? "en" : "fr", choix = voixPref[grp];
+  if(choix){ const v = _voixListe.find(x => (x.voiceURI || x.name) === choix); if(v) return v; }
+  const pref = lang === "en" ? ["en-US","en-GB","en"] : lang === "ht" ? ["ht","fr-FR","fr-CA","fr"] : ["fr-FR","fr-CA","fr"];
+  for(const p of pref){
+    const v = _voixListe.find(x => x.lang && x.lang.replace("_","-").toLowerCase().startsWith(p.toLowerCase()));
+    if(v) return v;
+  }
+  return null;
+}
+let voixPref = {fr: null, en: null};
+try{ voixPref = Object.assign(voixPref, JSON.parse(localStorage.getItem("knall-voix") || "{}")); }catch(e){}
+function sauverVoix(){ try{ localStorage.setItem("knall-voix", JSON.stringify(voixPref)); }catch(e){} majVoixVal(); }
+let _voixNat = null;
+async function voixNatives(T){
+  if(_voixNat) return _voixNat;
+  try{
+    const r = await T.getSupportedVoices();
+    _voixNat = (r.voices || []).map((v, i) => ({i, uri: v.voiceURI || v.name, nom: v.name, lang: String(v.lang || "").replace("_", "-"), local: v.localService !== false}));
+  }catch(e){ _voixNat = []; }
+  return _voixNat;
+}
+async function listeVoix(){
+  const T = ttsNatif();
+  if(T) return voixNatives(T);
+  return _voixListe.map((v, i) => ({i, uri: v.voiceURI || v.name, nom: v.name, lang: String(v.lang || "").replace("_", "-"), local: v.localService}));
+}
+const REGIONS = {"fr-FR":"France","fr-CA":"Canada","fr-BE":"Belgique","fr-CH":"Suisse","en-US":"États-Unis","en-GB":"Royaume-Uni","en-AU":"Australie","en-IN":"Inde","en-CA":"Canada","en-NG":"Nigeria","en-ZA":"Afrique du Sud","en-IE":"Irlande"};
+function majVoixVal(){ const e = $("voixVal"); if(e) e.textContent = "Français : " + (voixPref.fr ? "choisie" : "auto") + " · English : " + (voixPref.en ? "choisie" : "auto"); }
+async function ouvrirVoix(){
+  const ov = document.createElement("div"); ov.className = "overlay"; ov.style.zIndex = 80;
+  ov.innerHTML = '<div class="sheet" style="padding:20px 18px;max-height:88vh;overflow-y:auto"><div style="font-size:18px;font-weight:700;margin-bottom:4px">Voix de lecture</div><div style="font-size:13px;opacity:.7;margin-bottom:12px">Choisis la voix qui lit les réponses, puis touche Écouter pour l\'essayer.</div><div id="vZone">Recherche des voix…</div><button id="vOk" style="width:100%;margin-top:16px;border:0;border-radius:14px;padding:12px;color:#fff;font:inherit;font-weight:600;background:linear-gradient(135deg,var(--accent1),var(--accent2))">Terminer</button></div>';
+  document.body.appendChild(ov);
+  ov.querySelector("#vOk").onclick = () => { arreterLecture(); ov.remove(); };
+  const toutes = await listeVoix(), zone = ov.querySelector("#vZone"); zone.textContent = "";
+  const groupes = [["fr", "Français (et créole)", "Bonjour, je suis Knall. Comment puis-je t'aider aujourd'hui ?"], ["en", "English", "Hello, I am Knall. How can I help you today?"]];
+  let total = 0;
+  groupes.forEach(([g, titre, exemple]) => {
+    const liste = toutes.filter(v => v.lang.toLowerCase().startsWith(g)); total += liste.length;
+    const bloc = document.createElement("div"); bloc.style.marginBottom = "14px";
+    const t = document.createElement("div"); t.style.cssText = "font-weight:600;margin-bottom:6px"; t.textContent = titre; bloc.appendChild(t);
+    if(!liste.length){ const p = document.createElement("div"); p.style.cssText = "font-size:13px;opacity:.7"; p.textContent = "Aucune voix installée pour cette langue."; bloc.appendChild(p); zone.appendChild(bloc); return; }
+    const ligne = document.createElement("div"); ligne.style.cssText = "display:flex;gap:8px;align-items:center";
+    const sel = document.createElement("select"); sel.style.cssText = "flex:1;margin:0";
+    const auto = document.createElement("option"); auto.value = ""; auto.textContent = "Automatique"; sel.appendChild(auto);
+    liste.forEach((v, n) => {
+      const o = document.createElement("option"); o.value = v.uri;
+      o.textContent = "Voix " + (n + 1) + " · " + (REGIONS[v.lang] || v.lang) + (v.local ? " · hors ligne" : " · en ligne");
+      if(voixPref[g] === v.uri) o.selected = true; sel.appendChild(o);
+    });
+    sel.onchange = () => { voixPref[g] = sel.value || null; sauverVoix(); };
+    const b = document.createElement("button"); b.className = "act-btn"; b.textContent = "Écouter";
+    b.style.cssText = "flex:none;border-radius:14px;padding:9px 14px";
+    b.onclick = () => { try{ lireTexte(exemple, () => {}); }catch(e){ alert("Lecture impossible : " + e.message); } };
+    ligne.appendChild(sel); ligne.appendChild(b); bloc.appendChild(ligne); zone.appendChild(bloc);
+  });
+  if(!total){
+    zone.textContent = "";
+    const p = document.createElement("div"); p.style.cssText = "font-size:14px;line-height:1.5";
+    p.textContent = "Aucune voix trouvée. Sur Android : Paramètres > Système > Langues > Synthèse vocale, puis installe « Synthèse vocale Google » et télécharge d'autres voix. Reviens ici ensuite.";
+    zone.appendChild(p);
+  }
+}
+let _lectureId = 0;
+const ttsNatif = () => {
+  const C = window.Capacitor; if(!C) return null;
+  const P = C.Plugins || {};
+  try{ return P.TextToSpeech || (C.registerPlugin ? C.registerPlugin("TextToSpeech") : null); }catch(e){ return P.TextToSpeech || null; }
+};
+function arreterLecture(){
+  _lectureId++;
+  const T = ttsNatif(); if(T){ try{ T.stop().catch(() => {}); }catch(e){} }
+  try{ speechSynthesis.cancel(); }catch(e){}
+  if(_lectureEnCours){ const f = _lectureEnCours; _lectureEnCours = null; f(); }
+}
+async function lireNatif(T, morceaux, onFin, secours){
+  const id = ++_lectureId;
+  _lectureEnCours = onFin || (() => {});
+  const fini = () => { if(id === _lectureId && _lectureEnCours){ const f = _lectureEnCours; _lectureEnCours = null; f(); } };
+  let premier = true;
+  try{
+    for(const m of morceaux){
+      if(id !== _lectureId) return;
+      const dit = m.lg === "ht" ? kreyolVersFrancais(m.ph) : m.ph;
+      const opts = {text: dit, lang: m.lg === "en" ? "en-US" : "fr-FR", rate: (m.lg === "ht" ? 0.92 : 1) * vitesseVoix(), pitch: 1, volume: 1, category: "ambient"};
+      const uri = voixPref[m.lg === "en" ? "en" : "fr"];
+      if(uri){ const v = (await voixNatives(T)).find(x => x.uri === uri); if(v){ opts.voice = v.i; if(v.lang) opts.lang = v.lang; } }
+      await T.speak(opts);
+      premier = false;
+    }
+    fini();
+  }catch(e){
+    if(id !== _lectureId) return;
+    if(premier && secours && "speechSynthesis" in window){ _lectureEnCours = null; secours(); return; }
+    fini(); alert("Lecture impossible : " + ((e && e.message) || e));
+  }
+}
+function lireWeb(morceaux, onFin){
+  const file = [];
+  morceaux.forEach(({ph, lg}) => {
+    const v = choisirVoix(lg);
+    const vraiCreole = lg === "ht" && v && /^ht/i.test(v.lang); // si le téléphone a une vraie voix créole
+    const dit = lg === "ht" && !vraiCreole ? kreyolVersFrancais(ph) : ph;
+    const u = new SpeechSynthesisUtterance(dit);
+    if(v){ u.voice = v; u.lang = v.lang; } else u.lang = lg === "en" ? "en-US" : "fr-FR";
+    u.rate = (lg === "ht" ? 0.92 : 1) * vitesseVoix(); u.pitch = 1;
+    file.push(u);
+  });
+  _lectureEnCours = onFin || (() => {});
+  file.forEach((u, i) => {
+    u.onend = () => { if(i === file.length - 1 && _lectureEnCours){ const f = _lectureEnCours; _lectureEnCours = null; f(); } };
+    u.onerror = () => { if(_lectureEnCours){ const f = _lectureEnCours; _lectureEnCours = null; f(); } };
+    speechSynthesis.speak(u);
+  });
+}
+function lireTexte(raw, onFin){
+  const T = ttsNatif();
+  if(!T && !("speechSynthesis" in window)) throw new Error("lecture vocale non disponible sur cet appareil");
+  arreterLecture();
+  const propre = texteALire(raw);
+  if(!propre) throw new Error("rien à lire");
+  const morceaux = decouper(propre, 200).map(ph => ({ph, lg: detecterLangue(ph)}));
+  if(T){ lireNatif(T, morceaux, onFin, () => lireWeb(morceaux, onFin)); return; } // app Android : voix native
+  lireWeb(morceaux, onFin);
+}
+// Test depuis la console : testerVoixKreyol("Mwen renmen Ayiti anpil")
+window.testerVoixKreyol = t => { const r = kreyolVersFrancais(t); console.log(r); lireTexte(t); return r; };
+
+function afficherMsg(type, texte){
+  const d=document.createElement('div');
+  d.className = "msg " + type;
+  d.dataset.agent = agentActif;
+  const s=document.createElement('div'); s.className = "txt"; d.appendChild(s);
+  remplirMsg(d, texte);
+  if(type === "ai"){
+    const a=document.createElement('div'); a.className = "actions";
+    const c=document.createElement('button'); c.className = "act-btn"; c.textContent = "📋 Copier";
+    const p=document.createElement('button'); p.className = "act-btn"; p.textContent = "📤 Partager";
+    c.onclick = () => copierTexte(d.dataset.raw.replace(/\[\[\s*IMG\s*:[^\]]*\]\]/gi, "").trim(), c);
+    p.onclick = () => partagerTexte(d.dataset.raw.replace(/\[\[\s*IMG\s*:[^\]]*\]\]/gi, "").trim(), p);
+    const l=document.createElement('button'); l.className = "act-btn"; l.textContent = "🔊 Écouter";
+    let enLecture = false;
+    l.onclick = () => {
+      if(enLecture){ arreterLecture(); return; }
+      try{
+        enLecture = true; l.textContent = "⏹️ Arrêter";
+        lireTexte(d.dataset.raw, () => { enLecture = false; l.textContent = "🔊 Écouter"; });
+      }catch(e){ enLecture = false; l.textContent = "🔊 Écouter"; alert("Lecture impossible : " + e.message); }
+    };
+    a.append(c, p, l); d.appendChild(a);
+  }
+  chat.appendChild(d);
+  chat.scrollTop = chat.scrollHeight;
+  return d;
+}
+function ajouterMsg(type, texte){
+  const d = afficherMsg(type, texte);
+  threadActif().vues.push({type, texte});
+  sauverThreads();
+  return d;
+}
+function memoriser(agent, q, r){
+  hist[agent].push({role:"user", content:q}, {role:"assistant", content:r});
+  sauverThreads();
+}
+
+let _dernierePropo = "";
+function proposerAgent(cible, question, pourImage){
+  const cle = threadId + ":" + cible;
+  if(!pourImage && _dernierePropo === cle) return;   // une seule fois de suite, pas de répétition
+  _dernierePropo = cle;
+  const d = ajouterMsg("sys", pourImage
+    ? "🎨 Pour créer une image, passe à l'agent « Image »."
+    : "💡 Cette question semble relever de l'agent « " + NOMS[cible] + " ». Tu peux passer à cet agent si tu veux (je réponds quand même ici).");
+  const b = document.createElement("button"); b.className = "act-btn"; b.style.cssText = "display:block; margin:6px auto 0";
+  b.textContent = "Passer à « " + NOMS[cible] + " »";
+  b.onclick = () => { b.disabled = true; changerAgent(cible, false); if(pourImage) repondre(question); };
+  d.appendChild(b);
+  chat.scrollTop = chat.scrollHeight;
+}
+function changerAgent(nom, auto){
+  agentActif = nom;
+  threadActif().agent = nom;
+  sauverThreads();
+  agentLabel.textContent = NOMS[nom]; majBarreImage();
+  menu.querySelectorAll('button').forEach(x => x.classList.toggle('active', x.dataset.agent === nom));
+  ajouterMsg("sys", auto ? "↪️ Question détectée pour l'agent « " + NOMS[nom] + " » — redirigée automatiquement." : "Agent actif : " + NOMS[nom]);
+}
+/* ---- Agent Image : style, prompt anglais, galerie ---- */
+const DEMANDE_IMAGE = /^(?:(?:s'il (?:te|vous) plait|tanpri|svp|stp|please)\s+)?(?:envoi\w*|envoy\w*|voye|montr\w*|donn\w*|gener\w*|fais|fe|cre\w*|dessin\w*|produi\w*|fabriqu\w*|make|generate|show|send|create|draw)(?:[\s-]+(?:moi|mwen|m|nou|me|us))?\s+(?:(?:un|une|yon|des|de|an|the|a|some)\s+)?(?:[\w'’-]+\s+){0,2}?(?:image|imaj|photo|foto|illustration|dessin|picture|portrait|logo|affiche)s?\b/;
+const STYLES = {
+  reel:   {nom: "📷 Réaliste",    suffixe: ", photorealistic, real photograph, natural lighting, sharp focus, highly detailed, 35mm DSLR photo"},
+  illus:  {nom: "🎨 Illustration", suffixe: ", digital illustration, vibrant colors, detailed, clean composition"},
+  dessin: {nom: "✏️ Dessin",       suffixe: ", hand-drawn pencil sketch, detailed linework"},
+  libre:  {nom: "✨ Libre",        suffixe: ""}
+};
+let styleImage = "reel"; try{ styleImage = localStorage.getItem("knall-style") || "reel"; }catch(e){}
+if(!STYLES[styleImage]) styleImage = "reel";
+
+async function preparerPrompt(p){
+  let en = p;
+  try{   // demande (créole / français) -> prompt anglais court ; si ça rate, on garde le texte tel quel
+    const ctl = new AbortController(), t = setTimeout(() => ctl.abort(), 25000);
+    const res = await fetch(PROXY_URL.replace(/\/$/, "") + "/chat", {
+      method: "POST", signal: ctl.signal,
+      headers: {"Content-Type": "application/json", "x-knall-token": APP_TOKEN},
+      body: JSON.stringify({agent: "general", messages: [{role: "user", content:
+        "Transforme cette demande d'image en un prompt anglais court et précis (45 mots maximum) pour un générateur d'images. Réponds UNIQUEMENT avec le prompt, sans guillemets ni explication.\n\nDemande : " + p}]})
+    });
+    clearTimeout(t);
+    if(res.ok){
+      const d = await res.json();
+      const r = String(d.reponse || "").replace(/^[\s"'«]+|[\s"'»]+$/g, "").split("\n")[0];
+      if(r.length > 8 && r.length < 400) en = r;
+    }
+  }catch(e){}
+  return (en + (STYLES[styleImage] || STYLES.reel).suffixe).slice(0, 480);
+}
+function marquerStyle(){ $("styleBar").querySelectorAll("[data-k]").forEach(b => b.classList.toggle("on", b.dataset.k === styleImage)); }
+function majBarreImage(){
+  try{ majBarreCode(); }catch(e){}
+  const bar = $("styleBar"), on = agentActif === "image";
+  bar.classList.toggle("on", on);
+  input.placeholder = on ? "Décris l'image que tu veux…" : "Écrivez un message...";
+  if(!on || bar.dataset.ok) return;
+  bar.dataset.ok = "1";
+  Object.keys(STYLES).forEach(k => {
+    const b = document.createElement("button"); b.className = "pill"; b.dataset.k = k; b.textContent = STYLES[k].nom;
+    b.onclick = () => { styleImage = k; try{ localStorage.setItem("knall-style", k); }catch(e){} marquerStyle(); };
+    bar.appendChild(b);
+  });
+  const g = document.createElement("button"); g.className = "pill"; g.textContent = "🖼️ Galerie"; g.onclick = ouvrirGalerie; bar.appendChild(g);
+  marquerStyle();
+}
+function nomImage(media, blob){ return "knall-image-" + media.id.slice(-5) + "." + ((blob.type.split("/")[1] || "png").replace("jpeg", "jpg")); }
+function ouvrirGalerie(){
+  const grid = $("galerieGrid"); grid.innerHTML = "";
+  const liste = [];
+  threads.forEach(t => (t.vues || []).forEach(v => { if(v.media && v.media.kind === "image") liste.push(v.media); }));
+  liste.reverse();
+  $("galerieVide").hidden = liste.length > 0;
+  Promise.all(liste.map(m => mediaGet(m.id).then(b => [m, b]))).then(arr => arr.filter(x => x[1]).forEach(([media, blob]) => {
+    const tile = document.createElement("div"); tile.className = "gtile";
+    const im = document.createElement("img"); im.alt = media.prompt; im.src = URL.createObjectURL(blob); im.style.cursor = "zoom-in"; im.onclick = () => ouvrirImage(im.src, media.prompt);
+    const cap = document.createElement("div"); cap.className = "cap"; cap.textContent = media.prompt;
+    const btns = document.createElement("div"); btns.className = "btns";
+    const nom = nomImage(media, blob);
+    const mk = (t, f) => { const b = document.createElement("button"); b.className = "act-btn"; b.textContent = t; b.onclick = () => f(b); btns.appendChild(b); };
+    mk("💾 Enregistrer", b => sauverBlob(nom, blob, b, false));
+    mk("📤", b => sauverBlob(nom, blob, b, true));
+    tile.append(im, cap, btns); grid.appendChild(tile);
+  }));
+  $("galerie").hidden = false;
+}
+$("galerieClose").onclick = () => { $("galerie").hidden = true; };
+$("galerie").addEventListener("click", e => { if(e.target === $("galerie")) $("galerie").hidden = true; });
+
+let imageAEnvoyer = null;
+async function repondre(question){
+  const img = imageAEnvoyer; imageAEnvoyer = null;
+  if(DECLENCHEUR_MUSIQUE.test(question.trim())){
+    await genererMusique(question.replace(DECLENCHEUR_MUSIQUE, "").trim() || "musique");
+    return;
+  }
+  const brut = question.trim();
+  const sansFichier = !img && !brut.includes("--- ");
+  const explicite = DECLENCHEUR_IMAGE.test(brut);   // « image : … », « dessine … » : ordre clair, on l'exécute
+  if(sansFichier && (agentActif === "image" || explicite)){
+    if(!MODE_EN_LIGNE){ ajouterMsg("ai", "Mode sans connexion : la génération d'image a besoin d'internet. Passe en ligne avec le bouton en haut."); return; }
+    await genererImage(explicite ? (brut.replace(DECLENCHEUR_IMAGE, "").trim() || brut) : brut);
+    return;
+  }
+  // Demande de document (Excel, Word, PDF...) : le serveur crée le vrai fichier
+  if(demandeDocument(brut)){
+    if(!MODE_EN_LIGNE){ ajouterMsg("ai", "Mode sans connexion : la création de documents a besoin d'internet. Passe en ligne avec le bouton en haut."); return; }
+    await creerDocument(question); return;
+  }
+  // Demande d'image devinée : on ne change pas d'agent, on dit à la personne d'y aller
+  if(sansFichier && DEMANDE_IMAGE.test(norm(brut))){ proposerAgent("image", question, true); return; }
+  if(ROUTAGE_AUTO && !img){ const cible = detecterAgent(question, agentActif); if(cible && cible !== "image") proposerAgent(cible, question, false); }
+  const agent = agentActif;
+  // 0) agent Rédaction : outils de texte hors ligne
+  if(agent === "redaction"){ const rr = redaction(question); if(rr){ ajouterMsg("ai", rr); memoriser(agent, question, rr); return; } }
+  // 1) base locale
+  const horsLigne = !MODE_EN_LIGNE || !navigator.onLine;
+  // un seul mot tapé : en mode sans réseau, on montre toutes les réponses qui contiennent ce mot
+  if(!img && horsLigne && tok(question).length === 1){
+    const cs = chercherCandidats(question, KB[agent] || []);
+    if(cs.length === 1){ ajouterMsg("ai", cs[0].reponse); memoriser(agent, question, cs[0].reponse); return; }
+    if(cs.length > 1){ proposerChoix(agent, question, cs, true); return; }
+  }
+  const local = (!img && (BASE_LOCALE || !MODE_EN_LIGNE)) ? chercherReponse(question, KB[agent] || []) : null;
+  if(local){ ajouterMsg("ai", local); memoriser(agent, question, local); return; }
+  // pas compris : en mode sans réseau, jusqu'à 3 réponses proches au choix
+  if(!img && horsLigne){
+    const cs = chercherCandidats(question, KB[agent] || []);
+    if(cs.length){ proposerChoix(agent, question, cs, true); return; }
+  }
+  // 2) serveur (si configure et en ligne)
+  if(!MODE_EN_LIGNE){ ajouterMsg("ai", "Mode sans connexion : je n'ai pas de réponse dans ma base pour ça. Passe en ligne (bouton en haut) pour interroger le serveur."); memoriser(agent, question, "(pas de réponse locale)"); return; }
+  if(!PROXY_URL){ ajouterMsg("ai", "Rien dans la base locale, et le serveur n'est pas encore configuré (PROXY_URL en haut du script)."); return; }
+  if(!navigator.onLine){ ajouterMsg("ai", "Pas de connexion et pas de réponse dans la base locale. (Le modèle offline viendra ici plus tard.)"); return; }
+  const bulle = ajouterMsg("ai", "…"); // ajoute deja une entree "…" dans vues, on la corrige apres
+  bulle.classList.add("pending");
+  bulle.querySelector(".txt").innerHTML = '<div class="typing"><span></span><span></span><span></span></div>';
+  try{
+    const rep = await appelerServeur(agent, question, img);
+    remplirMsg(bulle, rep);
+    bulle.classList.remove("pending");
+    if(document.hidden) notifier("Knall a répondu", rep);
+    const v = threadActif().vues; v[v.length-1].texte = rep;
+    memoriser(agent, question, rep);
+    if(APPRENDRE && sansFichier) sauverAppris(agent, question, rep);   // pas pour un fichier/une image joints (question geante)
+  }catch(e){
+    bulle.classList.remove("pending");
+    const msg = e.arret ? "⏹️ Arrêté." : "Impossible de joindre le serveur : " + (e.name === "AbortError" ? "délai dépassé" : e.message);
+    remplirMsg(bulle, msg);
+    const v = threadActif().vues; v[v.length-1].texte = msg;
+    sauverThreads();
+    ajouterReessai(bulle, question, img, msg);
+  }
+  chat.scrollTop = chat.scrollHeight;
+}
+function send(){
+  const v=input.value.trim();
+  if(!v && !fichierJoint) return;
+  if(fichierJoint && fichierJoint.pending){ ajouterMsg("sys", "⏳ Lecture de l'image en cours, patiente un instant…"); return; }
+  const fj = fichierJoint;
+  const affiche = v + (fj ? (v ? "\n" : "") + "📎 " + fj.nom : "");
+  const envoye = (v || ((fj && fj.image ? "Analyse le texte de cette image : " : "Analyse ce fichier : ") + (fj ? fj.nom : ""))) +
+    (fj ? "\n\n--- " + (fj.image ? "Texte lu dans l'image" : "Contenu du fichier") + " « " + fj.nom + " » ---\n" + fj.texte : "");
+  renommerSiPremier(v || (fj ? fj.nom : ""));
+  const bulleUser = ajouterMsg("user", affiche);
+  if(fj && fj.image && bulleUser){ const im = new Image(); im.src = fj.image; im.className = "gen"; im.style.maxWidth = "200px"; bulleUser.appendChild(im); }
+  input.value=''; input.style.height='auto';
+  fichierJoint = null; renderFichierJoint();
+  imageAEnvoyer = fj && fj.image ? fj.image : null;
+  repondre(envoye);
+}
+const ICONE_ENVOI = document.getElementById('sendBtn').innerHTML;
+const ICONE_STOP = '<svg viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2.5"/></svg>';
+const ctlEnCours = new Set();
+function majBoutonEnvoi(){ document.getElementById('sendBtn').innerHTML = ctlEnCours.size ? ICONE_STOP : ICONE_ENVOI; }
+document.getElementById('sendBtn').onclick = () => {
+  if(ctlEnCours.size && !input.value.trim() && !fichierJoint){ ctlEnCours.forEach(c => { c.arret = true; c.abort(); }); return; }
+  send();
+};
+const ECRAN_TACTILE = (window.matchMedia && matchMedia('(pointer: coarse)').matches) || (navigator.maxTouchPoints > 0 && window.innerWidth < 900);
+input.addEventListener('keydown',e=>{ if(e.key==='Enter' && !e.shiftKey && !ECRAN_TACTILE){ e.preventDefault(); send(); } });   // ordinateur : Entrée envoie ; téléphone : Entrée = nouvelle ligne
+input.addEventListener('input',()=>{ input.style.height='auto'; input.style.height=Math.min(input.scrollHeight,120)+'px'; });
+window.addEventListener('offline', () => ajouterMsg("sys", "Hors connexion — seule la base locale répond."));
+window.addEventListener('online', () => ajouterMsg("sys", "Connexion rétablie."));
+
+/* ---- Empeche le clavier de cacher la barre de saisie (Android/webview) ---- */
+if(window.visualViewport){
+  const vv = window.visualViewport, pied = document.querySelector('footer');
+  const ajusterClavier = () => {
+    const decalage = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
+    pied.style.transform = decalage > 2 ? "translateY(-" + decalage + "px)" : "";
+    if(decalage > 2) chat.scrollTop = chat.scrollHeight;
+  };
+  vv.addEventListener('resize', ajusterClavier);
+  vv.addEventListener('scroll', ajusterClavier);
+}
+
+chargerKB().then(() => {
+  chargerAppris();
+  chargerThreads();
+  let dernierId = null; try{ dernierId = localStorage.getItem('knall-dernier-fil'); }catch(e){}
+  ouvrirConversation(threads.find(t => t.id === dernierId) ? dernierId : threads[0].id);
+  if(fbPret) synchroniserConnaissances();
+});
+window.addEventListener('beforeunload', () => { try{ localStorage.setItem('knall-dernier-fil', threadId); }catch(e){} });
+
+/* ================= Partie 3 : accueil, micro, réessayer, retour en bas, voix ================= */
+Object.assign(ICONES, {"mic": "<rect x=\"9\" y=\"3\" width=\"6\" height=\"12\" rx=\"3\"/><path d=\"M5 11a7 7 0 0 0 14 0M12 18v3\"/>", "chevdown": "<path d=\"M6 9l6 6 6-6\"/>", "speed": "<circle cx=\"12\" cy=\"13\" r=\"8\"/><path d=\"M12 13l4-4M9 3h6\"/>", "bolt": "<path d=\"M13 2L6 13h5l-1 9 8-12h-5z\" fill=\"currentColor\"/>"});
+const lireLS = (k, d) => { try{ const v = localStorage.getItem(k); return v === null ? d : v; }catch(e){ return d; } };
+function vitesseVoix(){ return parseFloat(lireLS('knall-vitesse', '1')) || 1; }
+function langueDictee(){ return lireLS('knall-dictee', 'fr-FR'); }
+
+/* -- Écran d'accueil (chat vide) -- */
+function remplirSaisie(txt){ input.value = txt; input.dispatchEvent(new Event('input')); input.focus(); }
+function construireAccueil(){
+  const a = document.createElement('div'); a.id = 'accueil';
+  a.innerHTML = '<div class="logo">' + svgIcone('bolt') + '</div><h2>Bonjou ! Kisa m ka fè pou ou ?</h2><p>Mande m yon kesyon, kreye yon imaj, yon dokiman oswa yon mizik.</p>';
+  const cs = document.createElement('div'); cs.className = 'chips';
+  [['bot', 'Poze yon kesyon', ''], ['image', 'Kreye yon imaj', 'Image : '], ['file', 'Ekri yon dokiman', 'Crée un document PDF de '], ['music', 'Konpoze yon mizik', 'Mizik : ']]
+    .forEach(([ic, nom, txt]) => {
+      const b = document.createElement('button'); b.className = 'chip'; b.innerHTML = svgIcone(ic) + '<span></span>';
+      b.lastChild.textContent = nom; b.onclick = () => remplirSaisie(txt); cs.appendChild(b);
+    });
+  a.appendChild(cs); return a;
+}
+function majAccueil(){
+  const vide = !chat.querySelector('.msg.user, .msg.ai');
+  chat.classList.toggle('vide', vide);
+  const a = document.getElementById('accueil');
+  if(vide && !a) chat.appendChild(construireAccueil());
+  else if(!vide && a) a.remove();
+}
+new MutationObserver(majAccueil).observe(chat, {childList: true});
+majAccueil();
+
+/* -- Retour en bas -- */
+chat.addEventListener('scroll', () => {
+  $('toBottom').classList.toggle('on', chat.scrollHeight - chat.scrollTop - chat.clientHeight > 250);
+});
+$('toBottom').onclick = () => chat.scrollTo({top: chat.scrollHeight, behavior: 'smooth'});
+
+/* -- Réessayer après une erreur -- */
+function ajouterReessai(bulle, question, img, msg){
+  const a = bulle.querySelector('.actions'); if(!a) return;
+  a.innerHTML = '';
+  const b = document.createElement('button'); b.className = 'act-btn'; b.textContent = '🔄 Réessayer';
+  b.onclick = () => {
+    const vues = threadActif().vues, i = Array.from(chat.querySelectorAll('.msg')).indexOf(bulle);
+    if(i >= 0 && vues[i] && vues[i].texte === msg){ vues.splice(i, 1); sauverThreads(); }
+    bulle.remove();
+    imageAEnvoyer = img || null;
+    repondre(question);
+  };
+  a.appendChild(b);
+}
+
+/* -- Dictée vocale (micro) -- */
+const SRClasse = window.SpeechRecognition || window.webkitSpeechRecognition;
+let reco = null, dicte = false;
+function finDictee(){ dicte = false; $('micBtn').classList.remove('on'); }
+function basculerDictee(){
+  if(dicte){ try{ reco.stop(); }catch(e){} return; }
+  try{
+    reco = new SRClasse(); reco.lang = langueDictee(); reco.interimResults = true; reco.continuous = false;
+    const base = input.value ? input.value.replace(/\s*$/, ' ') : '';
+    reco.onresult = e => { let t = ''; for(let i = 0; i < e.results.length; i++) t += e.results[i][0].transcript; input.value = base + t; input.dispatchEvent(new Event('input')); };
+    reco.onend = finDictee;
+    reco.onerror = e => {
+      finDictee();
+      if(e.error === 'not-allowed' || e.error === 'service-not-allowed') ajouterMsg('sys', 'Micro refusé : autorise le micro pour cette page, puis réessaie.');
+      else if(e.error === 'network') ajouterMsg('sys', 'La dictée a besoin d\'internet.');
+    };
+    dicte = true; $('micBtn').classList.add('on'); reco.start();
+  }catch(e){ finDictee(); ajouterMsg('sys', 'Dictée vocale indisponible sur cet appareil.'); }
+}
+if(SRClasse) $('micBtn').onclick = basculerDictee; else $('micBtn').style.display = 'none';
+
+/* ================= Conversation vocale live : j'écoute → Knall réfléchit → Knall parle → j'écoute… ================= */
+(function(){
+  const css = document.createElement("style");
+  css.textContent =
+    ".live-ov{position:fixed;inset:0;z-index:100002;background:radial-gradient(circle at 50% 38%,#1b2a6b 0,#0a0e1f 72%);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;color:#eef0ff;padding:24px;text-align:center}" +
+    ".live-orbe{width:150px;height:150px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#8fd0ff,#3fa9f5 45%,#a24bf0);box-shadow:0 0 70px rgba(63,169,245,.55);cursor:pointer}" +
+    ".live-orbe[data-etat=ecoute]{animation:livePouls 1.5s ease-in-out infinite}" +
+    ".live-orbe[data-etat=reflexion]{animation:liveAttente 1s ease-in-out infinite}" +
+    ".live-orbe[data-etat=parle]{animation:livePouls .65s ease-in-out infinite}" +
+    "@keyframes livePouls{50%{transform:scale(1.14)}}@keyframes liveAttente{50%{opacity:.45;transform:scale(.94)}}" +
+    ".live-st{font-size:18px;font-weight:600}.live-dit{min-height:48px;max-width:520px;font-size:15px;color:#aab2e6;line-height:1.4}" +
+    ".live-fin{border:0;border-radius:999px;padding:12px 26px;font-size:15px;font-weight:600;color:#fff;background:#e5484d;cursor:pointer}";
+  document.head.appendChild(css);
+
+  const LIVE = { actif:false, reco:null, ov:null, orbe:null, statut:null, dit:null, silences:0, verrou:null };
+  const LIB = { ecoute:"Je t'écoute…", reflexion:"Je réfléchis…", parle:"Je parle… (touche la boule pour m'interrompre)" };
+  const majLive = etat => { if(!LIVE.actif) return; LIVE.orbe.dataset.etat = etat; LIVE.statut.textContent = LIB[etat]; };
+
+  function liveFermer(){
+    if(!LIVE.actif) return;
+    LIVE.actif = false;
+    try{ if(LIVE.reco) LIVE.reco.abort(); }catch(e){}
+    LIVE.reco = null;
+    try{ arreterLecture(); }catch(e){}
+    try{ if(LIVE.verrou) LIVE.verrou.release(); }catch(e){}
+    LIVE.verrou = null;
+    if(LIVE.ov){ LIVE.ov.remove(); LIVE.ov = null; }
+  }
+
+  function liveEcouter(){
+    if(!LIVE.actif) return;
+    try{ arreterLecture(); }catch(e){}
+    majLive("ecoute"); LIVE.dit.textContent = "";
+    let texte = "", fini = false;
+    const r = new SRClasse(); LIVE.reco = r;
+    r.lang = langueDictee(); r.interimResults = true; r.continuous = false;
+    r.onresult = e => { texte = ""; for(let i = 0; i < e.results.length; i++) texte += e.results[i][0].transcript; if(LIVE.dit) LIVE.dit.textContent = texte; };
+    r.onerror = e => {
+      if(e.error === "not-allowed" || e.error === "service-not-allowed"){ fini = true; liveFermer(); ajouterMsg("sys", "Micro refusé : autorise le micro pour cette page, puis réessaie."); }
+      else if(e.error === "network"){ fini = true; liveFermer(); ajouterMsg("sys", "La conversation vocale a besoin d'internet pour comprendre ta voix."); }
+    };
+    r.onend = () => {
+      if(fini || !LIVE.actif || LIVE.reco !== r) return;
+      fini = true;
+      const t = texte.trim();
+      if(t){ LIVE.silences = 0; liveEnvoyer(t); return; }
+      if(++LIVE.silences >= 4){ liveFermer(); ajouterMsg("sys", "Conversation vocale terminée (je n'entendais plus rien)."); return; }
+      setTimeout(liveEcouter, 250);
+    };
+    try{ r.start(); }catch(e){ liveFermer(); ajouterMsg("sys", "Conversation vocale indisponible sur cet appareil."); }
+  }
+
+  async function liveEnvoyer(t){
+    majLive("reflexion"); LIVE.dit.textContent = "« " + t + " »";
+    const msgs = () => chat.querySelectorAll(".msg:not(.user)");
+    const avant = msgs().length;
+    input.value = t; send();          // même chemin que d'habitude : agents, base locale, serveur, images, documents
+    const debut = Date.now();
+    while(LIVE.actif && Date.now() - debut < 120000){
+      await new Promise(ok => setTimeout(ok, 350));
+      const liste = msgs(), der = liste[liste.length - 1];
+      if(liste.length > avant && der && !der.classList.contains("pending") && !der.querySelector(".typing")){
+        if(der.classList.contains("ai")){ liveParler(der); return; }
+        break;                          // message système : on repart à l'écoute
+      }
+    }
+    if(LIVE.actif) setTimeout(liveEcouter, 250);
+  }
+
+  function liveParler(d){
+    if(!LIVE.actif) return;
+    majLive("parle");
+    const raw = (d.dataset.raw || d.textContent || "").replace(/\[\[\s*IMG\s*:[^\]]*\]\]/gi, "");
+    const suite = () => { if(LIVE.actif) setTimeout(liveEcouter, 250); };
+    try{ lireTexte(raw, suite); }catch(e){ suite(); }
+  }
+
+  function liveOuvrir(){
+    if(!SRClasse){ ajouterMsg("sys", "La conversation vocale a besoin de la reconnaissance vocale, indisponible sur cet appareil."); return; }
+    if(LIVE.actif) return;
+    try{ if(dicte && reco) reco.stop(); }catch(e){}
+    LIVE.actif = true; LIVE.silences = 0;
+    const ov = document.createElement("div"); ov.className = "live-ov";
+    const orbe = document.createElement("div"); orbe.className = "live-orbe";
+    const st = document.createElement("div"); st.className = "live-st";
+    const dit = document.createElement("div"); dit.className = "live-dit";
+    const fin = document.createElement("button"); fin.type = "button"; fin.className = "live-fin"; fin.textContent = "Terminer";
+    fin.onclick = liveFermer;
+    orbe.onclick = () => { if(orbe.dataset.etat === "parle"){ arreterLecture(); } };   // interrompre Knall : il repasse à l'écoute
+    ov.append(orbe, st, dit, fin); document.body.appendChild(ov);
+    LIVE.ov = ov; LIVE.orbe = orbe; LIVE.statut = st; LIVE.dit = dit;
+    try{ if(navigator.wakeLock) navigator.wakeLock.request("screen").then(v => { LIVE.verrou = v; }).catch(() => {}); }catch(e){}
+    liveEcouter();
+  }
+  $("liveBtn").onclick = liveOuvrir;
+  if(!SRClasse) $("liveBtn").style.display = "none";
+})();
+
+/* -- Réglages voix -- */
+const VITESSES = [0.8, 1, 1.25], LANGUES_DICTEE = [['fr-FR', 'Français'], ['en-US', 'English']];
+function majVoixReglages(){
+  $('vitVal').textContent = '×' + vitesseVoix();
+  const l = LANGUES_DICTEE.find(x => x[0] === langueDictee()) || LANGUES_DICTEE[0];
+  $('dicVal').textContent = l[1];
+}
+$('voixVitesse').onclick = () => {
+  const i = VITESSES.indexOf(vitesseVoix());
+  try{ localStorage.setItem('knall-vitesse', String(VITESSES[(i + 1) % VITESSES.length])); }catch(e){}
+  majVoixReglages();
+};
+$('voixDictee').onclick = () => {
+  const i = LANGUES_DICTEE.findIndex(x => x[0] === langueDictee());
+  try{ localStorage.setItem('knall-dictee', LANGUES_DICTEE[(i + 1) % LANGUES_DICTEE.length][0]); }catch(e){}
+  majVoixReglages();
+};
+$('threadSearch').addEventListener('input', renderThreadsList);
+
+/* ---- Menu admin caché : 5 clics en 2 secondes sur le logo ---- */
+const CODE_ADMIN = "000999";
+let taps = [], echecs = 0, verrou = 0;
+
+$('brand').addEventListener('click', () => {
+  const now = Date.now();
+  taps = taps.filter(t => now - t <= 2000);
+  taps.push(now);
+  if(taps.length >= 5){ taps = []; ouvrirAdmin(); }
+});
+
+function ouvrirAdmin(){
+  $('admin').hidden = false;
+  $('pin').value = ''; $('pinMsg').textContent = '';
+  $('pinView').hidden = false; $('adminView').hidden = true;
+  setTimeout(() => $('pin').focus(), 50);
+}
+function fermerAdmin(){ $('admin').hidden = true; $('pin').value = ''; }
+$('adminClose').onclick = fermerAdmin;
+$('admin').addEventListener('click', e => { if(e.target === $('admin')) fermerAdmin(); });
+
+function verifierCode(){
+  const reste = Math.ceil((verrou - Date.now()) / 1000);
+  if(reste > 0){ $('pinMsg').textContent = "Trop d'essais. Réessaie dans " + reste + " s."; return; }
+  if($('pin').value === CODE_ADMIN){
+    echecs = 0;
+    $('pinView').hidden = true; $('adminView').hidden = false;
+    $('admAgent').value = agentActif;
+    rendreAdmin();
+  }else{
+    echecs++; $('pin').value = '';
+    if(echecs >= 3){ verrou = Date.now() + 30000; echecs = 0; $('pinMsg').textContent = "Code incorrect. Accès bloqué 30 s."; }
+    else $('pinMsg').textContent = "Code incorrect.";
+  }
+}
+$('pinOk').onclick = verifierCode;
+$('pin').addEventListener('keydown', e => { if(e.key === 'Enter') verifierCode(); });
+
+function lireAppris(){ try{ return JSON.parse(localStorage.getItem('knall-appris') || '{}'); }catch(e){ return {}; } }
+function ecrireAppris(a){ try{ localStorage.setItem('knall-appris', JSON.stringify(a)); }catch(e){} }
+function ajouterConnaissance(agent, q, r, tags, id){
+  let nid = id ? String(id) : "adm"+Date.now()+Math.floor(Math.random()*1000);
+  let i = KB[agent].findIndex(x => String(x.id) === nid);
+  if(i >= 0 && !memeQuestion(KB[agent][i].question, q)){   // même numéro, autre question : nouveau numéro automatique
+    nid = idLibre(nid, x => KB[agent].some(y => String(y.id) === x)); i = -1;
+  }
+  const item = {id: nid, question:q, reponse:r, tags:tags};
+  if(i >= 0) KB[agent][i] = item; else KB[agent].push(item);   // même question : mise à jour
+  const a = lireAppris(), L = (a[agent] = a[agent] || []);
+  const j = L.findIndex(x => String(x.id) === item.id);
+  if(j >= 0) L[j] = item; else L.push(item);
+  ecrireAppris(a);
+  pousseConnaissanceFirebase(agent, item);
+  return item;
+}
+
+function rendreAdmin(){
+  const agent = $('admAgent').value;
+  const ajoutees = lireAppris()[agent] || [];
+  $('admCount').textContent = (KB[agent].length - ajoutees.length) + " de base + " + ajoutees.length + " ajoutée(s) sur cet appareil";
+  const liste = $('admList'); liste.innerHTML = '';
+  ajoutees.slice().reverse().forEach(it => {
+    const d = document.createElement('div'); d.className = 'adm-item';
+    const del = document.createElement('button'); del.textContent = 'supprimer';
+    del.onclick = () => {
+      KB[agent] = KB[agent].filter(x => x.id !== it.id);
+      const a = lireAppris(); a[agent] = (a[agent] || []).filter(x => x.id !== it.id); ecrireAppris(a);
+      rendreAdmin();
+    };
+    const q = document.createElement('b'); q.textContent = it.question;
+    d.append(del, q, document.createElement('br'), document.createTextNode(it.reponse));
+    liste.appendChild(d);
+  });
+}
+$('admAgent').onchange = rendreAdmin;
+
+$('admAdd').onclick = () => {
+  const q = $('admQ').value.trim(), r = $('admR').value.trim();
+  if(!q || !r){ $('admMsg').textContent = "La question et la réponse sont obligatoires."; return; }
+  const tags = $('admT').value.split(',').map(t => t.trim()).filter(Boolean);
+  ajouterConnaissance($('admAgent').value, q, r, tags);
+  $('admQ').value = ''; $('admR').value = ''; $('admT').value = '';
+  $('admMsg').textContent = "Ajouté ✅";
+  rendreAdmin();
+};
+
+$('admExport').onclick = () => {
+  const agent = $('admAgent').value;
+  const blob = new Blob([JSON.stringify(KB[agent], null, 2)], {type:'application/json'});
+  sauverBlob(agent + '.json', blob, $('admExport'), true);
+};
+
+$('admImportBtn').onclick = () => $('admFile').click();
+$('admFile').onchange = async e => {
+  const f = e.target.files[0]; if(!f) return;
+  const agent = $('admAgent').value;
+  try{
+    const data = JSON.parse(await f.text());
+    if(!Array.isArray(data)) throw new Error("le fichier doit contenir une liste");
+    const deja = new Set(KB[agent].map(x => norm(x.question)));
+    let n = 0, maj = 0;
+    data.forEach(x => {
+      if(!x || typeof x.question !== 'string' || typeof x.reponse !== 'string') return;
+      const tags = Array.isArray(x.tags) ? x.tags : [], id = x.id != null && x.id !== "" ? String(x.id) : null;
+      const ex = id ? KB[agent].find(y => String(y.id) === id) : null;
+      if(ex && memeQuestion(ex.question, x.question)){ ajouterConnaissance(agent, x.question, x.reponse, tags, id); maj++; return; }   // même numéro + même question : mise à jour
+      if(!deja.has(norm(x.question))){
+        ajouterConnaissance(agent, x.question, x.reponse, tags, id);   // même numéro mais autre question : numéro changé automatiquement
+        deja.add(norm(x.question)); n++;
+      }
+    });
+    $('admMsg').textContent = n + " entrée(s) ajoutée(s), " + maj + " mise(s) à jour dans " + NOMS[agent] + ".";
+  }catch(err){
+    $('admMsg').textContent = "Import impossible : " + err.message;
+  }
+  e.target.value = '';
+  rendreAdmin();
+};
+
+/* ---- Test des API (admin) ---- */
+$('admTest').onclick = async () => {
+  const out = $('admTestOut'), lignes = [];
+  const maj = () => out.textContent = lignes.join('\n');
+  const essai = async (nom, f) => {
+    const t0 = Date.now(); lignes.push('⏳ ' + nom); maj(); const i = lignes.length - 1;
+    try{ const r = await f(); lignes[i] = '✅ ' + nom + ' (' + (Date.now()-t0) + ' ms)' + (r ? ' — ' + r : ''); }
+    catch(e){ lignes[i] = '❌ ' + nom + ' : ' + e.message; }
+    maj();
+  };
+  const avecDelai = (p, ms) => Promise.race([p, new Promise((_, r) => setTimeout(() => r(new Error('délai dépassé')), ms))]);
+  await essai('Librairie PDF (pdf.js)', async () => { if(!(await chargerLib('pdf'))) throw new Error('non chargée'); });
+  await essai('Librairie Word (mammoth)', async () => { if(!(await chargerLib('mammoth'))) throw new Error('non chargée'); });
+  await essai('Firebase (connexion anonyme)', async () => { if(!db) throw new Error('init impossible'); if(!fbPret) throw new Error('auth pas prête'); });
+  await essai('Serveur /chat', async () => { const r = await avecDelai(appelerServeur('general', 'test'), 70000); return String(r).slice(0, 40); });
+  await essai('Serveur /image', async () => {
+    const r = await avecDelai(fetch(PROXY_URL.replace(/\/$/, '') + '/image?prompt=test', {headers:{'x-knall-token': APP_TOKEN}}), 70000);
+    if(!r.ok) throw new Error('Erreur ' + r.status);
+  });
+};
+
+/* ---- Paramètres ---- */
+let SYNC_AUTRES = _lire("knall-sync", true);
+const lireAutos = () => { const a = lireAppris(); let n = 0; for(const k in a) n += a[k].filter(x => String(x.id).startsWith("auto")).length; return n; };
+function majModes(){
+  const baseActive = BASE_LOCALE || !MODE_EN_LIGNE;   // sans connexion : la base locale est obligatoire
+  const sw = (id, on) => $(id).setAttribute('aria-checked', on ? 'true' : 'false');
+  sw('modeNet', MODE_EN_LIGNE); sw('modeBase', baseActive); sw('modeApprend', APPRENDRE); sw('modeSync', SYNC_AUTRES);
+  $('hNet').textContent = MODE_EN_LIGNE ? 'Knall peut interroger le serveur quand il ne sait pas.' : 'Hors connexion : seule la base locale répond.';
+  $('hBase').textContent = !MODE_EN_LIGNE ? 'Toujours active sans connexion.' : (baseActive ? 'Knall cherche d\'abord dans sa base locale.' : 'Chaque question va directement au serveur.');
+  $('modeBase').disabled = !MODE_EN_LIGNE;
+  const n = lireAutos(); let ko = 0; try{ ko = Math.round((localStorage.getItem('knall-appris') || '').length / 1024); }catch(e){}
+  $('cntAppris').textContent = n;
+  mediaCount().then(c => { $('cntMedia').textContent = c; });
+  $('stockInfo').textContent = n + ' réponse(s) gardée(s) · environ ' + ko + ' Ko';
+  const clair = (document.documentElement.getAttribute('data-theme') || 'dark') === 'light';
+  $('themeVal').textContent = clair ? 'Clair' : 'Sombre';
+  try{ majVoixReglages(); }catch(e){}
+  try{
+    localStorage.setItem('knall-online', MODE_EN_LIGNE ? '1' : '0'); localStorage.setItem('knall-base', BASE_LOCALE ? '1' : '0');
+    localStorage.setItem('knall-apprendre', APPRENDRE ? '1' : '0'); localStorage.setItem('knall-sync', SYNC_AUTRES ? '1' : '0');
+  }catch(e){}
+}
+$('modeNet').onclick = () => { MODE_EN_LIGNE = !MODE_EN_LIGNE; majModes(); };
+$('modeBase').onclick = () => { BASE_LOCALE = !BASE_LOCALE; majModes(); };
+$('modeApprend').onclick = () => { APPRENDRE = !APPRENDRE; majModes(); };
+$('modeSync').onclick = () => { SYNC_AUTRES = !SYNC_AUTRES; majModes(); if(SYNC_AUTRES && fbPret) synchroniserConnaissances(); };
+$('viderAppris').onclick = () => {
+  const a = lireAppris(); for(const k in a) a[k] = a[k].filter(x => !String(x.id).startsWith("auto")); ecrireAppris(a);
+  for(const k in KB) KB[k] = KB[k].filter(x => !String(x.id).startsWith("auto"));
+  majModes();
+};
+$('viderMedia').onclick = async () => { await mediaClear(); majModes(); };
+$('settingsBtn').onclick = () => { majModes(); $('reglages').hidden = false; };
+try{ majBarreCode(); }catch(e){}
+$('guideBtn').onclick = () => { $('reglages').hidden = true; ouvrirGuide(); };
+
+/* -- Signaler un problème : on envoie seulement le texte écrit ici (jamais la conversation) -- */
+function ouvrirSignalement(){
+  const ov = document.createElement("div");
+  ov.style.cssText = "position:fixed;inset:0;z-index:100002;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;padding:18px";
+  const bx = document.createElement("div");
+  bx.style.cssText = "width:100%;max-width:420px;background:var(--bg2);color:var(--text);border:1px solid var(--border);border-radius:16px;padding:16px";
+  const h = document.createElement("div"); h.style.cssText = "font-weight:700;font-size:16px;margin-bottom:6px"; h.textContent = "Signaler un problème";
+  const p = document.createElement("div"); p.style.cssText = "font-size:13px;color:var(--sub);margin-bottom:10px"; p.textContent = "Décris ce qui ne va pas. Seul ce texte est envoyé, pas tes conversations.";
+  const ta = document.createElement("textarea"); ta.maxLength = 600; ta.rows = 5; ta.placeholder = "Ex. : la voix s'arrête au milieu d'une réponse…";
+  ta.style.cssText = "width:100%;box-sizing:border-box;background:var(--input-bg);color:var(--text);border:1px solid var(--border);border-radius:10px;padding:10px;font:inherit;resize:vertical";
+  const msg = document.createElement("div"); msg.style.cssText = "font-size:13px;min-height:18px;margin:8px 0;color:var(--sub)";
+  const bar = document.createElement("div"); bar.style.cssText = "display:flex;gap:10px;justify-content:flex-end";
+  const an = document.createElement("button"); an.type = "button"; an.textContent = "Annuler"; an.style.cssText = "border:1px solid var(--border);background:none;color:var(--text);border-radius:10px;padding:10px 14px;font:inherit;cursor:pointer";
+  const ok = document.createElement("button"); ok.type = "button"; ok.textContent = "Envoyer"; ok.style.cssText = "border:0;background:var(--accent1);color:#fff;border-radius:10px;padding:10px 16px;font:inherit;font-weight:600;cursor:pointer";
+  an.onclick = () => ov.remove();
+  ok.onclick = async () => {
+    const texte = ta.value.trim();
+    if(texte.length < 3){ msg.textContent = "Écris quelques mots."; return; }
+    ok.disabled = true; msg.textContent = "Envoi…";
+    try{
+      const r = await fetch(PROXY_URL.replace(/\/$/, "") + "/report", { method: "POST", headers: { "Content-Type": "application/json", "x-knall-token": APP_TOKEN, "x-knall-device": ID_APPAREIL }, body: JSON.stringify({ texte, agent: agentActif }) });
+      const d = await r.json().catch(() => ({}));
+      if(!r.ok) throw new Error(d.error || ("Erreur " + r.status));
+      msg.textContent = "✅ Merci, c'est envoyé !"; setTimeout(() => ov.remove(), 1200);
+    }catch(e){ msg.textContent = "Envoi impossible : " + e.message; ok.disabled = false; }
+  };
+  bar.append(an, ok); bx.append(h, p, ta, msg, bar); ov.appendChild(bx); document.body.appendChild(ov); ta.focus();
+}
+$('signalBtn').onclick = () => { $('reglages').hidden = true; ouvrirSignalement(); };
+$('policeBtn').onclick = () => { $('reglages').hidden = true; ouvrirPolice(); };
+$('notifBtn').onclick = activerNotifs;
+$('kbBtn').onclick = () => { $('reglages').hidden = true; ouvrirDiagnosticKB(); };
+$('voixBtn').onclick = () => { $('reglages').hidden = true; ouvrirVoix(); };
+majVoixVal();
+majPoliceVal();
+try{ if(!localStorage.getItem('knall-guide')) setTimeout(ouvrirGuide, 900); else setTimeout(demanderNotifs, 2500); }catch(e){}
+$('reglagesClose').onclick = () => { $('reglages').hidden = true; };
+$('reglages').addEventListener('click', e => { if(e.target === $('reglages')) $('reglages').hidden = true; });
+majModes();
+</script>
+<div id="apercu">
+  <div id="apercuBar">
+    <span id="apercuNom"></span>
+    <button class="act-btn" id="apercuReload">🔄</button>
+    <button class="act-btn" id="apercuShare">📤</button>
+    <button class="act-btn" id="apercuDl">⬇️</button>
+    <button class="act-btn" id="apercuClose">✕</button>
+  </div>
+  <iframe id="apercuFrame" sandbox="allow-scripts allow-forms allow-modals allow-popups"></iframe>
+</div>
+<div id="viewer">
+  <div id="viewerBar">
+    <span id="viewerNom"></span>
+    <span class="lock">🔒 Lecture seule</span>
+    <button class="act-btn" id="viewerCopy">📋</button>
+    <button class="act-btn" id="viewerDl">⬇️</button>
+    <button class="act-btn" id="viewerClose">✕</button>
+  </div>
+  <div id="viewerCode"></div>
+</div>
+</body>
+</html>
